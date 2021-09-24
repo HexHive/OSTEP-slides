@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Virtual CPU (Processes and Threads)
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Virtualization
@@ -61,16 +58,17 @@ The ***virtual*** **process abstraction** provides this illusion.
 
 # Process abstraction
 
-* A program consists of static code and data, e.g., on the disk.
-* A process is an instance of a program (at any time there may be 0 or more
-  instances of a program running, e.g., a user may run multiple concurrent
+* A ***program*** consists of static code and data, e.g., on the disk.
+* A ***process*** is an instance of a program (at any time there may be 0 or
+  more instances of a program running, e.g., a user may run multiple concurrent
   shells).
 
 ---
 
 # Process definition
 
-> A process is an *execution stream* in the context of a *process sate*.
+> A ***process*** is an ***execution stream*** in the context of a 
+> ***process sate***.
 > The execution stream is the sequence of executing instructions (i.e., the
 > "thread of control"). The process state captures everything executing
 > instructions can affect or are affected by (e.g., registers, address space,
@@ -140,35 +138,53 @@ minimum height=1.2cm] {code data heap stack};
 
 ---
 
+# Comparison of terms:
+
+* A ***program*** is on-disk application, consisting of code and data; 
+  programs become a process when they are executed
+* A ***process*** is a running instance of a program. A process starts with a
+  single thread of execution and an address space.
+* A process can launch multiple ***threads*** of execution in the same address
+  space. Each thread receives its own stack but they share global data, code,
+  and heap.
+
+---
+
 # Virtualizing the CPU
 
 * Goal: give each process the illusion of exclusive CPU access
 * Reality: the CPU is a shared resource among all processes
 
-* Two approaches: time sharing or space sharing
-    * CPU: time sharing, alternate between tasks
-    * Memory: space sharing (more later)
-    * Disk: space sharing (more later)
+* Two approaches: shared in time or space
+    * ***time sharing***: exclusive use, one at a time
+    * ***space sharing***: everyone gets a small chunk all the time
+
+. . .
+
+* Different strategies for CPU, memory, and disk
+    * ***CPU:*** time sharing, alternate between tasks
+    * ***Memory:*** space sharing (more later)
+    * ***Disk:*** space sharing (more later)
 
 ---
 
 # OS provides process abstraction
 
-* When you execute a program, the OS creates a process.
-* OS time shares CPU across multiple processes.
-* OS scheduler picks which of the executable processes to run.
+* When the user executes a program, the OS creates a process.
+* OS time-shares CPU across multiple processes.
+* OS scheduler picks ***one*** of the executable processes to run.
     * Scheduler must keep a list of processes
-    * Scheduler must keep metadata for policy.
+    * Scheduler must keep metadata for policy
 
 ---
 
 # Difference between policy and mechanism
 
-* Policy: which process to run
-* Mechanism: how to switch from one process to another
+* ***Policy:*** which process to run
+* ***Mechanism:*** how to switch from one process to another
 
-> Distinction between policy and mechanism enables modularity. The scheduling
-> policy is independent of the context switch functionality.
+Distinction between policy and mechanism enables modularity. The scheduling
+policy is independent of the context switch functionality.
 
 ---
 
@@ -185,11 +201,14 @@ minimum height=1.2cm] {code data heap stack};
 
 # Process states
 
-* *Running*: this process is currently executing
-* *Ready*: this process is ready to execute (and will be scheduled when the policy decides so)
-* *Blocked*: this process is suspended (e.g., waiting for some action; OS will unblock it when that action is complete)
-* *New*: this process is being created (to ensure it will not be scheduled)
-* *Dead*: this process has terminated (e.g., if the parent process has not read out the return value yet)
+* ***Running***: this process is currently executing
+* ***Ready***: this process is ready to execute (and will be scheduled when
+  the policy decides so)
+* ***Blocked***: this process is suspended (e.g., waiting for some action; OS
+  will unblock it when that action is complete)
+* ***New***: this process is being created (to ensure it will not be scheduled)
+* ***Dead***: this process has terminated (e.g., if the parent process has not 
+  read out the return value yet)
 
 ---
 
@@ -237,20 +256,26 @@ What process should be scheduled if all processes are blocked?
 
 . . . 
 
-Modern kernels use a low priority idle process that is schedules and executes if
-no other processes are ready. The idle process never blocks or executes any I/O.
-The idle process is a simple solution to a challenging problem. Without the idle
-process, the scheduler would have to continuously check if no processes are
-ready to run and would have to conservatively take action. With an idle process,
-there is always at least one process to run.
+The ***idle*** process.
+
+Modern kernels use a low priority idle process that is scheduled and executes
+if no other process iss ready. The idle process never blocks or executes any
+I/O. 
+
+. . .
+
+The idle process is a simple solution to a challenging problem.
+Without the idle process, the scheduler would have to check if no
+processes are ready to run and would have to conservatively take action. The
+idle process guarantees that there is always ***at least one*** process to run.
 
 ---
 
 # OS data structures
 
 * OS maintains data structure (array/list) of active processes.
-* Information for each process is stored in a process control block (or 
-  `task struct` on Linux), e.g.,
+* Information for each process is stored in a process control block (on Linux,
+  this is called `task struct`) that contains:
     * Process identifier (PID)
     * Process state (e.g., ready)
     * Pointer to parent process (`cat /proc/self/status`)
@@ -260,20 +285,31 @@ there is always at least one process to run.
 
 ---
 
+# Distinction program / process / thread
+
+* ***Program:*** consists of an executable on disk. Contains all information
+  to boostrap a process
+* ***Process:*** a running instance of a program; has data section and stack
+  initialized
+* ***Thread:*** a process can have multiple threads in the same address space
+  (computing on the same data)
+
+---
+
 # Distinction between processes and threads
 
 * A thread is a "lightweight process" (LWP)
     * A thread consists of a stack and register state (stack pointer, code pointer, other registers).
     * Each process has one or more threads.
 
-> For example, two processes reading address `0xc0f3` may read different values.
-> While two threads in the same process will read the same value.
+For example, two processes reading address `0xc0f3` may read different values.
+While two threads in the same process will read the same value.
 
 ---
 
 # Requesting OS services
 
-* Processes can request services through system call API (Application
+* Processes can request services through the system call API (Application
   Programming Interface).
 * System calls transfer execution to the OS (the OS generally runs at higher
   privileges, enabling privileged operations).
@@ -305,30 +341,11 @@ a set of system calls:
 * The OS makes a copy of the caller's (parent's) address space.
 * The child is made ready and added to the list of processes.
 * `fork()` returns different values for parent/child.
-* Parent and child continue execution in *their own separate copy* of their
+* Parent and child continue execution in ***their own separate copy*** of their
   address space (next week: how can we efficiently handle the copy of address
   spaces?)
 
-<!-- TODO: fork demo and figure about spitting processes -->
-
----
-
-# Process API: `exec()`, executing a program
-
-* Always copying the same program is boring
-  (we would need one massive program with all functionality, e.g., `emacs`).
-* `exec()` replaces address space, loads new program from disk.
-* Program can pass command line arguments and environment.
-* Old address space/state is destroyed except for STDIN, STDOUT, STDERR which
- are kept, allowing the parent to redirect/rewire child's output!
-
----
-
-# Process API: `wait()`, waiting for a child
-
-* Child processes are tied to their parent.
-* `exit(int retval)` takes a return value argument.
-* Parent can `wait()` for termination of child and read child's return value.
+<!-- TODO: figure about splitting processes -->
 
 ---
 
@@ -355,9 +372,68 @@ int main(int argc, char* argv[]) {
 
 ---
 
+# Process API: `exec()`, executing a program
+
+* Always copying the same program is boring
+  (we would need one massive program with all functionality, e.g., `emacs`).
+* `exec()` replaces address space, loads new program from disk.
+* Program can pass command line arguments and environment.
+* Old address space/state is destroyed except for STDIN, STDOUT, STDERR which
+ are kept, allowing the parent to redirect/rewire child's output!
+
+---
+
+# Why do we need `fork()` and `exec()`?
+
+Assume a user wants to start a different program. For that, the operating
+system needs to create a new process and create a new address space to load
+the program.
+
+. . .
+
+Let's use divide and conquer:
+
+* `fork()` creates a new process with a copy of the address space
+* `exec()` creates a new address space for a program
+* `clone()` creates a new thread in the same address space
+
+---
+
+# Process API: `wait()`, waiting for a child
+
+* Child processes are tied to their parent.
+* `exit(int retval)` takes a return value argument.
+* Parent can `wait()` for termination of child and read child's return value.
+
+---
+
+# A tree of processes
+
+* Each process has a parent process
+* A process can have many child process
+* Each process again can have child processes
+
+```
+ 3621  ?        Ss   \_ tmux
+ 3645  pts/2    Ss+  |   \_ -zsh
+ 3673  pts/3    Ss+  |   \_ -zsh
+ 4455  pts/4    Ss+  |   \_ -zsh
+27124  pts/1    Ss+  |   \_ -zsh
+21093  pts/5    Ss   |   \_ -zsh
+10589  pts/5    T    |   |   \_ vim 02-review.md
+10882  pts/5    R+   |   |   \_ ps -auxwf
+10883  pts/5    S+   |   |   \_ less
+21264  pts/7    Ss   |   \_ -zsh
+ 1382  pts/7    T    |   |   \_ vim /home/gannimo/notes.txt
+14368  pts/9    Ss   |   \_ -zsh
+29963  pts/9    S+   |       \_ python
+```
+
+---
+
 # Ensuring efficient execution
 
-> Process executes instructions *directly* on the CPU.
+> A process executes instructions *directly* on the CPU.
 
 . . . 
 
@@ -369,7 +445,12 @@ Issues with running directly on hardware:
 * Process could do something slow, e.g., I/O (OS may want to switch to another
   process)
 
-> Solution: OS and hardware maintain some control with help from hardware
+. . .
+
+***Solution:*** OS maintains some control with help from hardware.
+For example, the OS maintains timers to intercept the execution at regular
+intervals and the process may not execute privileged instructions that access
+the hardware directly.
 
 ---
 
@@ -384,7 +465,7 @@ Issues with running directly on hardware:
     * Enables compartmentalization (breaking complex systems into independent
       fault domains)
 
-What mechanism allows process isolation?
+What *mechanism* allows process isolation?
 
 ---
 
@@ -399,14 +480,14 @@ What mechanism allows process isolation?
 
 # Summary
 
-* Processes are a purely virtual concept
+* Processes are a purely ***virtual concept***
 * Separating policies and mechanisms enables modularity
-* OS is a server, reacts to requests from hardware and processes
-* Processes are isolated from the OS/other processes
-    * Processes have no direct hardware access
+* OS is a server, ***reacts to requests*** from hardware and processes
+* Processes are ***isolated*** from the OS/other processes
+    * Processes have no direct access to devices
     * Processes run in virtual memory
     * OS provides functionality through system calls
 * A process consists of an address space, associated kernel state (e.g., open
-  files, network channels) and one or more threads of execution
+  files, network channels), and one or more threads of execution
 
-Don't forget to get your learning feedback through the Moodle quiz!
+Don't forget the Moodle quiz!

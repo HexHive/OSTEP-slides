@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Concurrency Summary
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Concurrency
@@ -38,19 +35,43 @@ date    : EPFL, Fall 2019
 
 # Difference parallelism and concurrency
 
-* Parallelism: multiple threads (or processes) working on a single task using
-  multiple CPU cores (i.e., stuff happens at the same physical time)
-* Concurrency: tasks can start, run, and complete in overlapping time periods
-  (i.e., tasks run at the same virtual time)
+* ***Parallelism:*** multiple threads (or processes) working on a single task
+  using multiple CPU cores (i.e., stuff happens at the same physical time)
+* ***Concurrency:*** tasks can start, run, and complete in overlapping time
+  periods (i.e., tasks run at the same virtual time)
+
+\begin{tikzpicture}
+\node at (3, 5) {Parallelism};
+\node[rotate=90] at (1, 3) {Processes};
+\draw (1.5, 2) -- (1.5, 4.5);
+\node at (3, 1.5) {Time};
+\draw (1.5, 2) -- (4.5, 2);
+\draw (1.6, 2.5) -- (4.5, 2.5);
+\draw (1.6, 3) -- (4.5, 3);
+\draw (1.6, 3.5) -- (4.5, 3.5);
+\draw (1.6, 4) -- (4.5, 4);
+
+\node at (8, 5) {Concurrency};
+\node[rotate=90] at (6, 3) {Processes};
+\draw (6.5, 2) -- (6.5, 4.5);
+\node at (8, 1.5) {Time};
+\draw (6.5, 2) -- (9.5, 2);
+\draw (6.6, 2.5) -- (7, 2.5);
+\draw (7, 3) -- (7.5, 3);
+\draw (7.5, 3.5) -- (8, 3.5);
+\draw (8, 4) -- (8.5, 4);
+\draw (8.5, 3.5) -- (9, 3.5);
+\draw (9, 2.5) -- (9.5, 2.5);
+\end{tikzpicture}
 
 ---
 
 # Locks: basic idea
 
 * Requirements: mutual exclusion, fairness, and performance
-    * **Mutual exclusion**: only one thread in critical section
-    * **Fairness**: all threads should eventually get the lock
-    * **Performance**: low overhead for acquiring/releasing lock
+    * ***Mutual exclusion***: only one thread in critical section
+    * ***Fairness***: all threads should eventually get the lock
+    * ***Performance***: low overhead for acquiring/releasing lock
 * Lock implementation requires hardware support
     * ... and OS support for performance
 
@@ -126,17 +147,24 @@ date    : EPFL, Fall 2019
 
 # Semaphores/spin locks/CVs are equivalent
 
-* Each can be implemented through a combination of the other mechanisms
-* Depending on the use-case one may be more performant than the other
+* Each can be implemented through a combination of the others
+* Depending on the use-case, performance will vary
     * How often is the critical section executed?
     * How many threads compete for a critical section?
     * How long is the lock taken?
 
 ---
 
+# Book chapters
+
+* Concurrency/Locking: OSTEP 28-30
+* Concurrency/Semaphores: OSTEP 30-32
+
+---
+
 # Concurrency summary
 
-* Spin lock, CV, and semaphore synchronize multiple threads/processes
+* Spin lock, CV, and semaphore synchronize multiple threads
     * Spin lock: atomic access, no ordering, spinning
     * Condition variable: atomic access, queue, OS primitive
     * Semaphore: shared access to critical section with (int) state

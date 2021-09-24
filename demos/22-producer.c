@@ -29,6 +29,7 @@ unsigned int cpos = 0, ppos = 0;
 void *producer(void *arg) {
 	unsigned int max = (unsigned int)arg;
 	for (unsigned int i = 0; i < max; i++) {
+		printf("Produced %d\n", i);
 		put(i);
 	}
 	return NULL;
@@ -37,7 +38,7 @@ void *producer(void *arg) {
 void *consumer(void *arg) {
 	unsigned int max = (unsigned int)arg;
 	for (unsigned int i = 0; i < max; i++) {
-		printf("%d\n", get(i));
+		printf("Consumed %d\n", get(i));
 	}
 	return NULL;
 }

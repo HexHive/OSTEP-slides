@@ -1,38 +1,45 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Virtual CPU (Scheduling)
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Topics covered in this lecture
 
-* Mechanism: context switch
-* Mechanism: preemption
-* Policy: scheduling
+Scheduling has two aspects: 1) how to switch from one process to another and
+2) what process should run next
+
+* Mechanism: context switch (how to switch)
+* Mechanism: preemption (keeping control)
+* Policy: scheduling (where to switch to)
 
 This slide deck covers chapters 7--10 in OSTEP.
 
 ---
 
-# Reminder: process state transitions
+# Scheduling
 
-\begin{tikzpicture}
+How does the kernel switch from one
+process to the other?
 
-\node [draw, circle, ultra thick, minimum width=2cm] at (0,0) {Blocked};
-\node [draw, circle, ultra thick, minimum width=2cm] at (-3,3) {Running};
-\node [draw, circle, ultra thick, minimum width=2cm] at (3,3) {Ready};
+* System has several `ready` processes
+* For simplicity, we assume one CPU
 
-\draw [ultra thick, ->] (-2.3, 2.3) -- (-0.7, 0.7);
-\node at (-2.8, 1.2) {I/O: start};
-\draw [ultra thick, ->] (0.7, 0.7) -- (2.3, 2.3);
-\node at (2.5, 1.2) {I/O: done};
-\draw [ultra thick, ->] (-2, 3.1) -- (2, 3.1);
-\node at (0, 3.5) {Deschedule};
-\draw [ultra thick, ->] (2, 2.9) -- (-2, 2.9);
-\node at (0, 2.5) {Schedule};
+How does the kernel stay in control? 
 
-\end{tikzpicture}
+. . .
+
+* Configurable timers allow the OS to regain control
+
+. . .
+
+How does the kernel switch from one process to anther?
+
+* Context switch saves running process' state in kernel structure
+* Context switch restores state of next process
+* Context switch transfers control to next process and "returns"
+
+. . .
+
+Note: a context switch is transparent to the process
 
 ---
 
@@ -54,13 +61,14 @@ Reasons for a context switch:
 
 # Mechanism: context switch (pseudo code)
 
-* A function call that returns asynchronously: process A starts the execution of
-  the context switch but process B continues execution after the return of the
-  function.
-    * The function saves all registers in a scratch area (on the stack or in
-      the `task struct`).
+* A function call that returns asynchronously: process A starts the execution
+  of the context switch but process B continues execution after the return of
+  the function.
+    * The function saves all registers in a scratch area
+      (on the process' kernel stack or in
+      a predefined area of the `task struct`).
     * The OS switches address spaces.
-    * The function restores all registers from a scratch area.
+    * The function restores all registers from the scratch area.
     * The OS returns to process B.
 
 ---
@@ -68,23 +76,23 @@ Reasons for a context switch:
 # Mechanism: context switch (example, one address space)
 
 ```.ASM
-# void swtch(struct context *old, struct context *new)
+# void ctx_swtch(struct context *old, struct context *new)
 # Save old registers
-movl 4(%esp), %eax # put old ptr into eax
-popl 0(%eax) # save the old IP
-movl %esp, 4(%eax) # and stack
-movl %ebx, 8(%eax) # and other registers
+movl 4(%esp), %eax  # load ptr to old into eax
+popl 0(%eax)        # store old IP to old
+movl %esp, 4(%eax)  # store stack pointer
+movl %ebx, 8(%eax)  # store other registers
 ...
 movl %ebp, 28(%eax)
 
 # Load new registers
-movl 4(%esp), %eax # put new ptr into eax
+movl 4(%esp), %eax  # load ptr to new into eax
 movl 28(%eax), %ebp # restore other registers
 ...
 movl 8(%eax), %ebx
-movl 4(%eax), %esp # stack is switched here
-pushl 0(%eax) # return addr put in place
-ret # finally return into new ctxt
+movl 4(%eax), %esp  # stack switch (from now on new stack)
+pushl 0(%eax)       # store return addr
+ret                 # finally return into new ctxt
 ```
 
 ---
@@ -94,19 +102,22 @@ ret # finally return into new ctxt
 If a task never gives up control (`yield()`), exits, or performs I/O 
 then it could run forever and the OS could not gain control.
 
+. . .
+
 The OS therefore sets a timer before scheduling a process. If the timer
-is up, the hardware switches to the OS where it can decide if the process
-may continue.
+expires, the hardware interrupts the execution of the process and switches to
+the kernel. The kernel then decides if the process may continue.
 
 ---
 
 # What is a scheduling policy?
 
-We know *how* we can switch from one process to another, namely by storing its
-context and restoring the context of the other process.
+The context switch mechanism takes care of ***how*** the kernel switches from 
+one process to another, namely by storing its context and restoring the
+context of the other process.
 
-The scheduling policy tells us *which* process we should run at any given time.
-If there is only one process then the answer is easy. If there are more
+The scheduling policy determines ***which*** process should run next.
+If there is only one "ready' process then the answer is easy. If there are more
 processes then the policy decides in which order processes execute.
 
 ![Scheduling](./figures/12-timetable.png){ width=100px }
@@ -115,25 +126,55 @@ processes then the policy decides in which order processes execute.
 
 # Scheduler metrics
 
-* **Utilization:** what fraction of time is the CPU executing a program (goal: maximize)
-* **Turnaround time:** total global time from process creation to process exit (goal: minimize)
-* **Response time:** time from becoming ready to being scheduled (goal: minimize)
-* **Fairness:** all processes get same amount of CPU over time (goal: no starvation)
-* **Progress:** allow processes to make forward progress (goal: minimize kernel interrupts)
+When analyzing scheduler policies, we use the following terms:
+
+* **Utilization:** what fraction of time is the CPU executing a program
+  (goal: maximize)
+* **Turnaround time:** total global time from process creation to process exit
+  (goal: minimize)
+* **Response time:** time from becoming ready to being scheduled (goal:
+  minimize)
+* **Fairness:** all processes get same amount of CPU over time (goal: no
+  starvation)
+* **Progress:** allow processes to make forward progress (goal: minimize
+  kernel interrupts)
+
+---
+
+# Reminder: process states
+
+\begin{tikzpicture}
+
+\node [draw, circle, ultra thick, minimum width=2cm] at (0,0) {Blocked};
+\node [draw, circle, ultra thick, minimum width=2cm] at (-3,3) {Running};
+\node [draw, circle, ultra thick, minimum width=2cm] at (3,3) {Ready};
+
+\draw [ultra thick, ->] (-2.3, 2.3) -- (-0.7, 0.7);
+\node at (-2.8, 1.2) {I/O: start};
+\draw [ultra thick, ->] (0.7, 0.7) -- (2.3, 2.3);
+\node at (2.5, 1.2) {I/O: done};
+\draw [ultra thick, ->] (-2, 3.1) -- (2, 3.1);
+\node at (0, 3.5) {Deschedule};
+\draw [ultra thick, ->] (2, 2.9) -- (-2, 2.9);
+\node at (0, 2.5) {Schedule};
+
+\end{tikzpicture}
 
 ---
 
 # Scheduler implementation
 
+Simplest form: each state has an associated queue of tasks.
+
 ```.C
 task_struct_t *get_next_task() {
-  // consult data structures to find next runnable task
+  // consult task queues to find next runnable task
 }
 
 void enqueue_task(task_struct_t *task) {
-  // set task to runnable
+  // set task to ready
   
-  // update run queues so that it can run at its turn
+  // update ready queue so that it can run at its turn
 }
 ```
 
@@ -141,13 +182,14 @@ void enqueue_task(task_struct_t *task) {
 
 # Scheduling assumptions
 
-Let's understand scheduler policies step by step. We start with some simplifying
-assumptions:
+Let's understand scheduler policies step by step. We start with some
+simplifying assumptions
 
 * Each job runs for the same amount of time
 * All jobs arrive at the same time
 * All jobs only use the CPU (no I/O)
 * Run-time of jobs is known
+* For now, we assume a single CPU
 
 ---
 
@@ -217,10 +259,14 @@ assumptions:
 
 # SJF: Shortest Job First
 
-* Long running tasks delay other tasks (convoy effect)
+* Long running tasks delay other tasks (convoy effect: one long
+  running task delays many short running tasks like a truck followed by
+  many cars)
 * Short jobs must wait for completion of long task
 
 New scheduler: choose ready job with shortest runtime!
+
+![](./figures/12-tractor.png){ width=75% }
 
 ---
 
@@ -424,8 +470,7 @@ New scheduler: choose ready job with shortest runtime!
 
 * If the scheduler is aware of I/O (e.g., loading data from disk) then
   another process can execute until the data is fetched. I/O operations are
-  incredibly slow and can be carried out asynchronously (if the scheduler is
-  aware).
+  incredibly slow and can be carried out asynchronously.
 
 ---
 
@@ -440,22 +485,49 @@ New scheduler: choose ready job with shortest runtime!
 
 # Advanced scheduling: multi-level feedback queue (MLFQ)
 
-* Goal: general purpose scheduling. Must support both long running background
-  tasks (batch processing) and low latency foreground tasks (interactive
-  processing).
-    * Batch processing: response time not important, cares for long run times
-    * Interactive processes: response time critical, short bursts
+* Goal: general purpose scheduling
+
+The scheduler must support both long running background
+tasks (batch processes) and low latency foreground tasks (interactive
+processes).
+
+* Batch process: response time not important, cares for long run times
+  (reduce the cost of context switches, cares for lots of CPU, not when)
+* Interactive process: response time critical, short bursts
+  (context switching cost not important, not much CPU needed but frequently)
 
 ---
 
 # MLFQ: basics
 
-Approach: multiple levels of round robin; each level has higher priority and
-preempts all lower levels. Process at higher level will always be scheduled
-first. Set of rules adjusts priorities dynamically.
+***Approach:*** multiple levels of round robin
+
+* Each level has higher priority and preempts all lower levels
+* Process at higher level will always be scheduled first
+* High levels have short time slices, lower levels run for longer
+
+\begin{center}
+\begin{tikzpicture}[scale=0.5]
+
+\draw [orange, ultra thick](0,0) rectangle (1,1) node[pos=.5] {};
+\draw [green, ultra thick](1.1,0) rectangle (2,2) node[pos=.5] {};
+\draw [blue, ultra thick](2.1,0) rectangle (3,3) node[pos=.5] {};
+\draw [red, ultra thick](3.1,0) rectangle (4,4) node[pos=.5] {};
+
+\node at (2.5, -1) {Decreasing Priority};
+\draw [ultra thick, ->](0,-0.5) -- (4,-0.5);
+
+\node [rotate=90] at (-1, 2) {Time Slice};
+\draw [ultra thick, ->](-0.5,0) -- (-0.5,4);
+
+\end{tikzpicture}
+\end{center}
+
+Set of rules adjusts priorities dynamically.
 
 * Rule 1: if `priority(A) > priority(B)` then A runs.
 * Rule 2: if `priority(A) == priority(B)` then A, B run in RR
+
 
 ---
 
@@ -465,7 +537,6 @@ Goal: use past behavior as predictor for future behavior.
 
 * Rule 3: processes start at top priority
 * Rule 4: if process uses up whole time slice, demote it to lower priority
-  (time slices are longer at lower priority)
 
 ---
 
@@ -473,17 +544,17 @@ Goal: use past behavior as predictor for future behavior.
 
 Low priority tasks may never run on a busy system.
 
-* Rule 5: periodically boost priority of all tasks that haven't run
+* Rule 5: periodically move all jobs to the topmost queue
 
 ---
 
-# MLFQ challenges: gaming
+# MLFQ challenges: gaming the scheduler
 
 High priority process could yield before its time slice is up, remaining
 at high priority.
 
-* Rule 6: account for total time at priority level (and not just time
-  of the last time slice), downgrade when threshold is exceeded
+* Rule 4': account for total time at priority level (and not just time
+  of the last time slice)
 
 ---
 
@@ -492,21 +563,65 @@ at high priority.
 * Rule 1: if `priority(A) > priority(B)` then A runs.
 * Rule 2: if `priority(A) == priority(B)` A, B run in RR
 * Rule 3: new processes start with top priority
-* Rule 4: if process uses up whole time slice, demote it to lower priority
-  (time slices get longer at lower priority)
-* Rule 5: periodically boost priority of all tasks that haven't run
-* Rule 6: account for total time at priority level (and not just time
-  of the last time slice), downgrade when threshold is exceeded
+* Rule 4: demote process to lower priority after whole time slice is used
+* Rule 5: periodically move all jobs to the topmost queue
+
+\begin{center}
+\begin{tikzpicture}[scale=0.5]
+
+\draw [orange, ultra thick](0,0) rectangle (1,1) node[pos=.5] {};
+\draw [green, ultra thick](1.1,0) rectangle (2,2) node[pos=.5] {};
+\draw [blue, ultra thick](2.1,0) rectangle (3,3) node[pos=.5] {};
+\draw [red, ultra thick](3.1,0) rectangle (4,4) node[pos=.5] {};
+
+\node at (2.5, -1) {Decreasing Priority};
+\draw [ultra thick, ->](0,-0.5) -- (4,-0.5);
+
+\node [rotate=90] at (-1, 2) {Time Slice};
+\draw [ultra thick, ->](-0.5,0) -- (-0.5,4);
+
+\end{tikzpicture}
+\end{center}
 
 ---
 
 # CFS: Completely Fair Scheduler
 
-* Idea: calculate time, processes receive on an ideal processor
+
+* Idea: each task runs in parallel and consumes equal CPU share
+* Approach: calculate time process receives on ideal processor
 * Example: assume 4 processes are ready, so they would receive 1/4 of the
   CPU each (add this time to the book keeping)
 
-![CFS](./figures/12-cfs.jpg){width=350px}
+\begin{center}
+\begin{tikzpicture}[scale=0.5]
+
+\draw [orange, ultra thick](0,0) rectangle (6,8) node[pos=.5] {};
+\draw [green, ultra thick](7,0) rectangle (13,8) node[pos=.5] {};
+\draw [blue, ultra thick](14,0) rectangle (20,8) node[pos=.5] {};
+
+\node at (3, 7.5) {Single Task};
+\node at (3, -0.5) {100\% CPU};
+\draw[->,decorate,decoration={snake,amplitude=.4mm,segment length=2mm,post length=1mm}](3,6) -- (3,1.5);
+
+\node at (10, 7.5) {Two Tasks};
+\node at (10, -0.5) {50\% CPU/Task};
+\draw [dashed](10,0.5) -- (10,6.5);
+\draw[->,decorate,decoration={snake,amplitude=.4mm,segment length=2mm,post length=1mm}](8.5,6) -- (8.5,1.5);
+\draw[->,decorate,decoration={snake,amplitude=.4mm,segment length=2mm,post length=1mm}](11.5,6) -- (11.5,1.5);
+
+\node at (17, 7.5) {Four Tasks};
+\draw [dashed](15.5,0.5) -- (15.5,6.5);
+\draw [dashed](17,0.5) -- (17,6.5);
+\draw [dashed](18.5,0.5) -- (18.5,6.5);
+\node at (17, -0.5) {25\% CPU/Task};
+\draw[->,decorate,decoration={snake,amplitude=.4mm,segment length=2mm,post length=1mm}](14.75,6) -- (14.75,1.5);
+\draw[->,decorate,decoration={snake,amplitude=.4mm,segment length=2mm,post length=1mm}](16.25,6) -- (16.25,1.5);
+\draw[->,decorate,decoration={snake,amplitude=.4mm,segment length=2mm,post length=1mm}](17.75,6) -- (17.75,1.5);
+\draw[->,decorate,decoration={snake,amplitude=.4mm,segment length=2mm,post length=1mm}](19.25,6) -- (19.25,1.5);
+
+\end{tikzpicture}
+\end{center}
 
 ---
 
@@ -518,6 +633,12 @@ at high priority.
 > multi-tasking CPU described above.  In practice, the virtual runtime of a task
 > is its actual runtime normalized to the total number of running tasks.
 
+* CFS keeps track of how long each process should have executed on an ideal
+  processor.
+* For each time slice, it calculates the fraction each process would have
+  received and keeps these balances in a tree.
+* The process with the highest balance is then scheduled
+
 * Linux used an O(1) scheduler based on multi-level feedback queues but switched
   to a [completely fair scheduler in 2007](https://www.kernel.org/doc/Documentation/scheduler/sched-design-CFS.txt)
 
@@ -526,7 +647,7 @@ at high priority.
 # CFS: implementation
 
 * Implementation: keep all processes in a red-black tree, sorted by maximum
-  execution time
+  execution time (keep track of their positive balance)
 * Scheduling
     * Schedule leftmost process (the one with the highest balance)
     * If the process exits, remove it from the scheduling tree
@@ -553,6 +674,6 @@ at high priority.
     * RR: preemptive, great response time, bad turnaround
     * MLFQ: preemptive, most realistic
     * CFS: fair scheduler by virtualizing time
-* Past behavior is good predictor for future behavior
+* Insight: past behavior is good predictor for future behavior
 
-Don't forget to get your learning feedback through the Moodle quiz!
+Don't forget to fill out the Moodle quiz and to submit lab0!

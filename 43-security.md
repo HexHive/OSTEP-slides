@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Security Summary
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Security
@@ -136,12 +133,12 @@ Typical slowdown introduced by AddressSanitizer is 2x.
 * Any data in the process could be interpreted as code (code injection: an
   attacker redirects control-flow to a buffer that contains attacker-controlled
   data as shellcode)
-* *Defense assumption:* if an attacker cannot inject code (as data), then a
+* ***Defense assumption:*** if an attacker cannot inject code (as data), then a
   code execution attack is not possible.
 
 ---
 
-# Address Space *Layout* Randomization (ASLR)
+# Address Space ***Layout*** Randomization (ASLR)
 
 * Successful control-flow hijack attacks depend on the attacker overwriting
   a code pointer with a known alternate target
@@ -162,8 +159,8 @@ Typical slowdown introduced by AddressSanitizer is 2x.
 * The compiler may place all buffers at the end of the stack frame and the
   canary just before the first buffer. This way, all non-buffer local variables
   are protected as well.
-* Limitation: the stack canary only protects against *continuous overwrites*
-  iff the attacker does *not know* the canary
+* Limitation: the stack canary only protects against ***continuous overwrites***
+  iff the attacker does ***not know*** the canary
 * An alternative is to encrypt the return instruction pointer by xoring it
   with a secret
 

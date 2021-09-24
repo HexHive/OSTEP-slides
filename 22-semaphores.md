@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Semaphores
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Topics covered in this lecture
@@ -12,14 +9,41 @@ date    : EPFL, Fall 2019
 * Signaling through condition variables and semaphores
 * Concurrency bugs
 
+This slide deck covers chapters 30, 31, 32 in OSTEP.
+
 ---
 
 # Condition variables (CV)
 
-* Locks enable mutual exclusion of a shared region but are oblivious to ordering
-* Another primitive is waiting and signaling (i.e., T2 waits until T1 completes a given task)
-    * Could be implemented by spinning until value changes (this is inefficient)
-    * New synchronization primitive: condition variables
+In concurrent programming, a common scenario is one thread waiting for
+another thread to complete an action.
+
+```.C++
+bool done = false;
+
+/* called in the child to signal termination */
+void thr_exit() {
+  done = true;
+}
+/* called in the parent to wait for a child thread */
+void thr_join() {
+  while (!done);
+}
+```
+
+---
+
+# Condition variables (CV)
+
+* Locks enable mutual exclusion of a shared region
+  unfortunately they are oblivious to ordering
+* Waiting and signaling (i.e., T2 waits until T1 completes a given task)
+  could be implemented by spinning until the value changes
+* But spinning is incredibly inefficient
+
+. . .
+
+* New synchronization primitive: ***condition variables***
 
 ---
 
@@ -28,6 +52,9 @@ date    : EPFL, Fall 2019
 * A CV allows a thread to wait for a condition
     * Usually implemented as queues
     * Another thread signals the waiting thread
+
+. . .
+
 * API: `wait`, `signal` or `broadcast`
     * `wait`: wait until a condition is satisfied
     * `signal`: wake up one waiting thread
@@ -42,7 +69,7 @@ date    : EPFL, Fall 2019
 bool done = false;
 pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t c = PTHREAD_COND_INITIALIZER;
-/* called in the thread to signal termination */
+/* called in the child to signal termination */
 void thr_exit() {
   pthread_mutex_lock(&m);
   done = true;
@@ -79,14 +106,15 @@ void thr_join() {
     * Parent continues and goes to sleep (forever)
 * Lock is therefore required for wait/signal synchronization
 
-Demo: `22-thread_edit.c`
+Demo: `22-thread_exit.c`
 
 ---
 
 # Producer/consumer synchronization
 
-* Producer/consumer is a common pattern in multi-threaded programming
-* A concurrent database (consumers) handling parallel requests from clients (producers)
+* Producer/consumer is a common programming pattern
+* For example: map (producers) / reduce (consumer)
+* For example: a concurrent database (consumers) handling parallel requests from clients (producers)
     * Clients produce new requests (encoded in a queue)
     * Handlers consume these requests (popping from the queue)
 
@@ -111,7 +139,7 @@ Demo: `22-thread_edit.c`
 
 * A semaphore extends a CV with an integer as internal state
 * `int sem_init(sem_t *sem, unsigned int value)`: creates a new semaphore with `value` slots
-* `int sem_wait(sem_t *sem)`: waits until the semaphore has at least one slot
+* `int sem_wait(sem_t *sem)`: waits until the semaphore has at least one slot, decrements the number of slots
 * `int sem_post(sem_t *sem)`: increments the semaphore (and wakes one waiting thread)
 * `int sem_destroy(sem_t *sem)`: destroys the semaphore and releases any waiting threads
 
@@ -371,15 +399,15 @@ void rwlock_release_readlock(rwlock_t *rw) {
 # Bugs in concurrent programs
 
 * Writing concurrent programs is hard!
-* Atomicity bug: concurrent but unsynchronized modification (lock!)
-* Order-violating bug: data is accessed in wrong order (use CV!)
-* Deadlock: program no longer makes progress (locking order)
+* ***Atomicity bug:*** concurrent, unsynchronized modification (lock!)
+* ***Order-violating bug:*** data is accessed in wrong order (use CV!)
+* ***Deadlock:*** program no longer makes progress (locking order)
 
 ---
 
 # Atomicity bugs
 
-* One thread checks value and prints it while another thread concurrently modifies it
+One thread checks value and prints it while another thread concurrently modifies it.
 
 ```.C
 int shared = 24;
@@ -403,12 +431,13 @@ void T2() {
 
 # Order-violating bug
 
-* One thread assumes the other has already updated a value
+One thread assumes the other has already updated a value.
 
 ```.C
 Thread 1::
 void init() {
   mThread = PR_CreateThread(mMain, ...);
+  mThread->State = ...;
 }
 
 Thread 2::
@@ -426,7 +455,7 @@ void mMain(...) {
 
 # Deadlock
 
-* Locks are taken in conflicting order
+Locks are taken in conflicting order.
 
 ```.C
 void T1() {
@@ -449,7 +478,7 @@ void T2() {
 
 # Summary
 
-* Spin lock, CV, and semaphore synchronize multiple threads/processes
+* Spin lock, CV, and semaphore synchronize multiple threads
     * Spin lock: atomic access, no ordering, spinning
     * Condition variable: atomic access, queue, OS primitive
     * Semaphore: shared access to critical section with (int) state

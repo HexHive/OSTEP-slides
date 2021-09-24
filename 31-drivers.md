@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Drivers and IO
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Persistence
@@ -54,6 +51,16 @@ This slide deck covers chapters 36, 37 in OSTEP.
 
 # Ancient device history
 
+![PDP-11/20 at Musée Bolo](./figures/31-pdp11.jpg){ width=300px }
+
+* Peripherals connected to UNIBUS
+* Each peripheral sets memory area it "listens" to
+* No memory protection
+
+---
+
+# Ancient device history
+
 * Each device (not type!) had a unique hardware interface
 * Applications contained code to communicate with devices
 * Application polled device to set/get information
@@ -78,7 +85,7 @@ This slide deck covers chapters 36, 37 in OSTEP.
 \draw [red, ultra thick] (3,2.5) -- (3,2);
 
 \draw [red, ultra thick] (-1,2) -- (5,2);
-\node at (7.3, 2)   {Northbridge, \textasciitilde 19600 MB/s};
+\node at (7.3, 2)   {Northbridge, \textasciitilde 19,600 MB/s};
 \node at (6.8, 1.5) {memory bus / PCI-E};
 
 \node [draw, rectangle, ultra thick, minimum width=2cm, minimum height=1cm] at (3,1) {GPU};
@@ -101,14 +108,14 @@ What about other devices?
 
 
 \draw [red, ultra thick] (-1,2) -- (5,2);
-\node at (7.3, 2)   {Northbridge, \textasciitilde 19600 MB/s};
+\node at (7.3, 2)   {Northbridge, \textasciitilde 19,600 MB/s};
 \node at (6.8, 1.5) {memory bus / PCI-E};
 
 \node [draw, rectangle, ultra thick, minimum width=2cm, minimum height=1cm] at (3,1) {GPU};
 \draw [red, ultra thick] (3,1.5) -- (3,2);
 
 \draw [orange, ultra thick] (-1,0) -- (5,0);
-\node at (7.15, 0)    {Southbridge \textasciitilde 4000 MB/s};
+\node at (7.15, 0)    {Southbridge \textasciitilde 4,000 MB/s};
 \node at (6.65, -0.5) {I/O bus (e.g., PCI)};
 
 \draw [orange, ultra thick] (1.5,0) -- (1.5,2);
@@ -133,14 +140,14 @@ What about "slow" IO?
 
 
 \draw [red, ultra thick] (-1,2) -- (5,2);
-\node at (7.3, 2)   {Northbridge, \textasciitilde 19600 MB/s};
+\node at (7.3, 2)   {Northbridge, \textasciitilde 19,600 MB/s};
 \node at (6.8, 1.5) {memory bus / PCI-E};
 
 \node [draw, rectangle, ultra thick, minimum width=2cm, minimum height=1cm] at (3,1) {GPU};
 \draw [red, ultra thick] (3,1.5) -- (3,2);
 
 \draw [orange, ultra thick] (-1,0) -- (5,0);
-\node at (7.15, 0)    {Southbridge \textasciitilde 4000 MB/s};
+\node at (7.15, 0)    {Southbridge \textasciitilde 4,000 MB/s};
 \node at (6.65, -0.5) {I/O bus (e.g., PCI)};
 
 \draw [orange, ultra thick] (1.5,0) -- (1.5,2);
@@ -150,7 +157,7 @@ What about "slow" IO?
 
 
 \draw [yellow, ultra thick] (-1,-2) -- (5,-2);
-\node at (7.8, -2) {Peripheral I/O bus, \textasciitilde 2000 MB/s};
+\node at (7.8, -2) {Peripheral I/O bus, \textasciitilde 2,000 MB/s};
 \node at (6.7, -2.5) {(e.g., SATA, USB)};
 
 \draw [yellow, ultra thick] (1.5,-2) -- (1.5,0);
@@ -361,13 +368,13 @@ Where do you see problems?
 
 \end{tikzpicture}
 
-* **PIO (Programmed IO)**: CPU tells the device *what* data is
+* **PIO (Programmed IO)**: CPU tells the device *what* data
     * One instruction for each byte/word
     * Efficient for a few bytes, scales terribly
 
 . . .
 
-* **DMA (Direct Memory Access)**: tell device *where* data is
+* **DMA (Direct Memory Access)**: tell device *where* data *is*
     * One instruction to send a pointer
     * Efficient for large data transfers
 
@@ -442,13 +449,45 @@ Where do you see problems?
 
 \end{tikzpicture}
 
-* IO: seek time, rotation time, transfer time
+* IO cost is sum of:
+    * seek time (adjust angle of reader)
+    * rotation time (rotate the start of the sector to the reader)
+    * transfer time (rotate sector under reader)
+
+---
+
+# Disc drives
+
+\begin{tikzpicture}
+
+\node [draw, circle, ultra thick, minimum width=1cm] at (0,0) {};
+\node [draw, circle, ultra thick, minimum width=2cm] at (0,0) {};
+\node [draw, circle, ultra thick, minimum width=3cm] at (0,0) {};
+\node [draw, circle, ultra thick, minimum width=4cm] at (0,0) {};
+\node [draw, circle, ultra thick, minimum width=5cm] at (0,0) {};
+\node [draw, circle, ultra thick, minimum width=6cm] at (0,0) {};
+
+\draw [ultra thick] (-3,0) -- (3,0);
+\draw [ultra thick] (0,-3) -- (0,3);
+\draw [ultra thick, rotate=45] (0,-3) -- (0,3);
+\draw [ultra thick, rotate=135] (0,-3) -- (0,3);
+
+
+\node [draw, fill, color=teal, rectangle, ultra thick, minimum width=4cm, minimum height=0.3cm, rotate=-44] at (3.05,0.2) {};
+\node [color=red, thick] at (1.85,1.4) {A};
+
+\end{tikzpicture}
+
+* [Hard drive spinning up](https://www.youtube.com/watch?v=D-EtrC32wrU)
+* [Open hard drive spinning up](https://www.youtube.com/watch?v=zMpa4h_SRmI)
+* [How floppy drives work](https://www.youtube.com/watch?v=EHRc-QMoUE4)
+* [Alternate use for floppy drives](https://www.youtube.com/watch?v=Oym7B7YidKs)
 
 ---
 
 # HDD: seek, rotate, transfer
 
-* Seek is costly (several ms--an eternity)
+* Seek is costly (several ms, "an eternity")
     * function of cylinder distance
     * operations: accelerate, coast, decelerate, settle
 * Rotate: 7200 RPM, 8.3 ms/rotation
@@ -478,7 +517,7 @@ Where do you see problems?
 # Optimization: buffering
 
 * A buffer cache between the disk and the higher level of the OS keeps most recently used disk blocks around
-* Preactively fetches blocks that are likely accessed
+* Proactively fetches blocks that are likely accessed
 * Keep track of dirty blocks that need to be written back
 
 ---

@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Persistence Summary
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Persistence
@@ -64,14 +61,14 @@ date    : EPFL, Fall 2019
 
 
 \draw [red, ultra thick] (-1,2) -- (5,2);
-\node at (7.3, 2)   {Northbridge, \textasciitilde 19600 MB/s};
+\node at (7.3, 2)   {Northbridge, \textasciitilde 19,600 MB/s};
 \node at (6.8, 1.5) {memory bus / PCI-E};
 
 \node [draw, rectangle, ultra thick, minimum width=2cm, minimum height=1cm] at (3,1) {GPU};
 \draw [red, ultra thick] (3,1.5) -- (3,2);
 
 \draw [orange, ultra thick] (-1,0) -- (5,0);
-\node at (7.15, 0)    {Southbridge \textasciitilde 4000 MB/s};
+\node at (7.15, 0)    {Southbridge \textasciitilde 4,000 MB/s};
 \node at (6.65, -0.5) {I/O bus (e.g., PCI)};
 
 \draw [orange, ultra thick] (1.5,0) -- (1.5,2);
@@ -81,7 +78,7 @@ date    : EPFL, Fall 2019
 
 
 \draw [yellow, ultra thick] (-1,-2) -- (5,-2);
-\node at (7.8, -2) {Peripheral I/O bus, \textasciitilde 2000 MB/s};
+\node at (7.8, -2) {Peripheral I/O bus, \textasciitilde 2,000 MB/s};
 \node at (6.7, -2.5) {(e.g., SATA, USB)};
 
 \draw [yellow, ultra thick] (1.5,-2) -- (1.5,0);
@@ -231,8 +228,6 @@ date    : EPFL, Fall 2019
 * Carefully schedule IO on slow devices
 * RAID virtualizes disks
 
-Don't forget to get your learning feedback through the Moodle quiz!
-
 ---
 
 # Purpose of a file system
@@ -290,16 +285,16 @@ The path is only traversed once, the OS can cache inodes and each process keeps 
 
 # Virtual File System
 
-* Different file systems (EXT4, NTFS, FAT) use vastly different data structures
-* A Virtual File System (VFS) abstracts from the underlying filesystem
+* File systems (EXT4, NTFS, FAT) use different data structures
+* A Virtual File System (VFS) abstracts from the real filesystem
 * VFS abstracts the FS as objects with specific operations
-    * Inode (lookup): an object in the filesystem (e.g., file or directory)
-    * Directory entry cache: speeds up translation from paths to inodes
-    * File (open): a file opened by a process ("open file description")
     * Superblock (mount): a life filesystem
-* System call logic targets VFS operations
+    * File (open): a file opened by a process ("open file description")
+    * Directory entry cache: speeds up path to inode translation
+    * Inode (lookup): a filesystem object (e.g., file or directory)
+* System call logic (open, seek, ...) maps to VFS operations
 * When implementing a new FS, implement the VFS API
-* System call implementation remains the same, no matter what underlying FS is used
+* System calls are now independent of FS implementation
 
 ---
 
@@ -330,7 +325,8 @@ For each approach, think about fragmentation, ability to grow/shrink files, sequ
 
 # Consistency
 
-> Redundant data must be consistent to ensure correct functionality
+> Redundant data must be consistent to ensure correctness.
+> Otherwise functionality may break.
 
 * Keeping redundant data consistent is challenging
 * Filesystem may perform several writes to redundant blocks
@@ -345,12 +341,13 @@ For each approach, think about fragmentation, ability to grow/shrink files, sequ
   that ALL new data is committed
     * Add redundancy to fix the problem with redundancy
 
-![](./figures/33-journaling.jpg){width=350px}
+![](./figures/34-journaling.jpg){width=350px}
 
 ---
 
-# Filesystem summary
+# Persistence summary
 
+* Drivers and IO allow abstraction and persistence
 * Filesystem API: handle interaction with the file system
 * Three ways to identify a file
     * File names (for humans)

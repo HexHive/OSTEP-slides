@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Virtualization Summary
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Virtualization
@@ -108,3 +105,5 @@ date    : EPFL, Fall 2019
 * Virtual CPU (Scheduling): OSTEP 7--10
 * Virtual Memory (Segmentation): OSTEP 13--17
 * Virtual Memory (Paging and Swapping): OSTEP 18--22
+
+This concludes the first pillar of OS.

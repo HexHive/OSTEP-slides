@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Mitigations
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Topics covered in this lecture
@@ -48,7 +45,7 @@ This slide deck covers [chapter 5.4 in SS3P](https://nebelwelt.net/SS3P/softsec.
 * Any data in the process could be interpreted as code (code injection: an
   attacker redirects control-flow to a buffer that contains attacker-controlled
   data as shellcode)
-* *Defense assumption:* if an attacker cannot inject code (as data), then a
+* ***Defense assumption:*** if an attacker cannot inject code (as data), then a
   code execution attack is not possible.
 
 ---
@@ -92,7 +89,7 @@ This slide deck covers [chapter 5.4 in SS3P](https://nebelwelt.net/SS3P/softsec.
     a) redirecting control flow
     b) to injected code
 * DEP prohibits the code injection, not control-flow hijacking
-    * Attackers can still redirect control flow to *existing* code
+    * Attackers can still redirect control flow to ***existing*** code
 
 ---
 
@@ -123,16 +120,18 @@ Instead of targeting a simple function, we can target a gadget
 
 # Address Space Randomization (ASR)
 
+> The security improvement of ASR depends on (i) the available entropy
+> for randomized locations, (ii) the completeness of randomization (i.e., are 
+> all objects randomized), and (iii) the absence of information leaks.
+
+. . .
+
 * Successful control-flow hijack attacks depend on the attacker overwriting
   a code pointer with a known alternate target
 * ASR changes (randomizes) the process memory layout
 * If the attacker does not know where a piece of code (or data) is, then it
   cannot be reused in an attack
-* Attacker must first *learn* or recover the address layout
-
-> The security improvement of ASR depends on (i) the available entropy
-> for randomized locations, (ii) the completeness of randomization (i.e., are 
-> all objects randomized), and (iii) the absence of information leaks.
+* Attacker must first ***learn*** or recover the address layout
 
 ---
 
@@ -155,7 +154,7 @@ related concept.
 
 # Address Space *Layout* Randomization (ASLR)
 
-> ASLR is a practical form of ASR
+> ASLR is a practical form of ASR.
 
 * ASLR focuses on blocks of memory
 * Heap, stack, code, executable, mmap regions
@@ -195,7 +194,7 @@ related concept.
 * Key insight: buffer overflows require pointer arithmetic
     * Instead of checking each memory dereference during function execution,
       we check the integrity of a variable once
-* *Assumption:* we only prevent RIP control-flow hijack attacks
+* ***Assumption:*** we only prevent RIP control-flow hijack attacks
 * We therefore only need to protect the integrity of the return instruction
   pointer
 
@@ -209,8 +208,8 @@ related concept.
 * The compiler may place all buffers at the end of the stack frame and the
   canary just before the first buffer. This way, all non-buffer local variables
   are protected as well.
-* Limitation: the stack canary only protects against *continuous overwrites*
-  iff the attacker does *not know* the canary
+* Limitation: the stack canary only protects against ***continuous overwrites***
+  iff the attacker does ***not know*** the canary
 * An alternative is to encrypt the return instruction pointer by xoring it
   with a secret
 
@@ -304,10 +303,10 @@ control-flow graph. Precision of the analysis is crucial!
 
 * Trade-off between precision and compatibility.
 
-* A single set of *valid functions* is highly compatible with other software
+* A single set of ***valid functions*** is highly compatible with other software
   but results in imprecision due to the large set size
 
-* *Class hierarchy analysis* results in small sets but may be incompatible with
+* ***Class hierarchy analysis*** results in small sets but may be incompatible with
   other source code and some programmer patterns (e.g., casting to void or not
   passing all parameters)
 
@@ -320,25 +319,27 @@ control-flow graph. Precision of the analysis is crucial!
   fact, i.e., when a corrupted pointer is used in the program
 * Over-approximation in the static analysis reduces security guarantees
 * Some attacks remain possible
-    * An attacker is free to modify the outcome of any JCC
-    * An attacker can choose any allowed target at each ICF location
+    * An attacker is free to modify the outcome of any conditional jump (e.g.,
+      `if` clauses depend on unprotected data values)
+    * An attacker can choose any allowed target at each indirect control-flow
+      transfer location
     * For return instructions: one set of return targets is too broad and even
       localized return sets are too broad for most cases
     * For indirect calls and jumps, attacks like COOP (Counterfeit Object
-      Oriented Programming) have shown that full functions can be used as gadgets
+      Oriented Programming) have shown that full functions serve as gadgets
 
 ---
 
 # Summary and conclusion
 
 * Deployed mitigations do not stop all attacks
-* Data Execution Prevention stops code injection attacks, but does not
+* ***Data Execution Prevention*** stops code injection attacks, but does not
   stop code reuse attacks
-* Address Space Layout Randomization is probabilistic, shuffles memory space,
-  prone to information leaks
-* Stack Canaries are probabilistic, do not protect against direct
+* ***Address Space Layout Randomization*** is probabilistic, shuffles memory
+  space, prone to information leaks
+* ***Stack Canaries*** are probabilistic, do not protect against direct
   overwrites, prone to information leaks
-* CFI restricts control-flow hijack attacks, does not protect against
+* ***CFI*** restricts control-flow hijack attacks, does not protect against
   data-only attacks
 
 Don't forget to get your learning feedback through the Moodle quiz!

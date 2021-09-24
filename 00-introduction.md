@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Introduction
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Topics covered in this lecture
@@ -16,6 +13,7 @@ date    : EPFL, Fall 2019
 # Class organization
 
 * Lectures cover OS design
+* Book: [OSTEP](http://pages.cs.wisc.edu/~remzi/OSTEP/)
 * Five (graded) labs focus on practical OS aspects
     - C programming
     - Threading
@@ -24,9 +22,30 @@ date    : EPFL, Fall 2019
     - Security
 * TAs handle all labs/homework questions
 * Grading
-    - 30% assignments, 30% midterm, 40% final
-    - Midterm: November 04 (in class)
-    - Final: December 16 (in class)
+    - Quizzes after each class (10%)
+    - Labs during the semester (50%)
+    - Final exam in the exam session (40%)
+* Feedback: through questions, quizzes, emails, office hours.
+
+---
+
+# Time management
+
+* 5 ECTS points map to, on average, 7 hours/week
+* Divide and conquer: theory and labs
+
+. . .
+
+* 3 hours of theory/lectures
+    * 2 hours class and reading
+    * 30 minutes quiz
+    * 30 minutes exercise
+
+. . .
+
+* 4 hours of programming
+    * 2 hours of lab session and Q&A
+    * 2 hours implementation on your own
 
 ---
 
@@ -66,12 +85,13 @@ date    : EPFL, Fall 2019
 
 \end{tikzpicture}
 
-* Provides standardized interface to resources
-* Manages and abstracts resources
+OS is middleware between applications and hardware. 
 
-> OS is middleware between applications and hardware. The OS manages
-> hardware and orchestrates currently executing programs. The OS allows
-> programs to request resources and handles access control.
+* Provides standardized interface to resources
+* Manages hardware
+* Orchestrates currently executing processes
+* Reacts to resource access requests
+* Handles access control
 
 \End{multicols}
 
@@ -79,9 +99,9 @@ date    : EPFL, Fall 2019
 
 # OS role #1: Standardized interface
 
-> The OS abstracts hardware and provides a unified interface (e.g.,
+> The OS provides common functionality to access resources.
+> The OS abstracts hardware, provides a unified interface (e.g.,
 > network chips A and B are accessed using the same API).
-> The OS provides common functionality to access resources
 
 * Challenges:
     * Defining the correct abstractions (e.g., what level)
@@ -92,7 +112,7 @@ date    : EPFL, Fall 2019
 
 # OS role #2: Resource management
 
-> The OS shares (limited) resources between applications
+> The OS shares (limited) resources between applications.
 
 * Isolation: protect applications from each other
 * Scheduling: provide efficient and fair access to resources
@@ -103,8 +123,8 @@ date    : EPFL, Fall 2019
 # OS role analogy
 
 The OS is like a waiter that serves individual clients. The waiter knows the
-menu, records orders, and ensures that food is delivered to the right table
-while keeping track of the bill.
+menu, records orders, and delivers food to the right table while keeping track
+of the bill.
 
 ![OS as a waiter for processes](./figures/00-waiter.png)
 
@@ -112,15 +132,15 @@ while keeping track of the bill.
 
 # What management services does an OS provide?
 
-* CPU: initializes program counter/registers, shares CPU
-* Program memory: initializes address space, loads program (code,
+* ***CPU:*** initializes program counter/registers, shares CPU
+* ***Program memory:*** initializes process address space, loads program (code,
   data, heap, stack)
-* Devices: read/write from/to disk; device driver is hardware
+* ***Devices:*** read/write from/to disk; device driver is hardware
   specific, abstracts to common interface
 
 ---
 
-# History of OS
+# (Short) History of Operating Systems
 
 * Started as a convenience library of common functions
 * Evolved from procedure calls to system calls
@@ -133,8 +153,8 @@ while keeping track of the bill.
 
 # OS building blocks
 
-Operating systems design can be split into three pillars, with security as a
-transcendental layer cutting across all pillars.
+OS design nicely separates into three pillars, with security as a
+transcendental layer covering all pillars.
 
 \begin{tikzpicture}
 \draw [orange, ultra thick] (0,0) rectangle (2,4);
@@ -157,44 +177,45 @@ transcendental layer cutting across all pillars.
 
 Each application believes it has all resources for itself
 
-* CPU: unlimited amount of instructions, continuous execution
-* Memory: unlimited memory is available
-* Challenge: how to share constrained resources
+* ***CPU:*** unlimited amount of instructions, continuous execution
+* ***Memory:*** unlimited memory is available
+* ***Challenge:*** how to share constrained resources
 
 ---
 
 # Building block: Concurrency
 
-OS must handle concurrent events and untangle them as necessary.
+OS must handle ***concurrent events*** and untangle them as necessary.
 
-* Hide concurrency from independent processes
-* Manage concurrency from dependent processes by providing synchronization and
-  communication primitives
-* Challenge: providing the right primitives
+* Hide concurrency from ***independent*** processes
+* Manage concurrency from ***dependent*** processes by providing
+  synchronization and communication primitives
+* ***Challenge:*** providing the right primitives
 
 ---
 
 # Building block: Persistence
 
-Lifetime of information is greater than lifetime of processes.
+Lifetime of information is greater than lifetime of a process.
 
-* Enable processes to access non-volatile information
+* Enable processes to access ***non-volatile information***
 * Abstract how data is stored (through a file system)
-* Be resilient to failures (e.g., power loss)
-* Provide access control
-* Challenge: authentication and permissions
+* Be ***resilient to failures*** (e.g., power loss)
+* Provide ***access control***
+* ***Challenge:*** authentication and permissions
 
 ---
 
 # Building block: Security
 
-OS is a gatekeeper, it ensures and enforces security
+OS is a gatekeeper, it ensures and enforces security. OS is also privileged
+and therefore frequently attacked.
 
-* Isolate processes from each other and the OS
-* Authenticate users (who is allowed to do what)
+* ***Isolate*** processes from each other and the OS
+* ***Authenticate*** users (who is allowed to do what)
 * Protect itself against malicious network/user input
 * Harden program execution (through mitigations)
-* Challenge: performance versus security
+* ***Challenge:*** performance versus security
 
 ---
 

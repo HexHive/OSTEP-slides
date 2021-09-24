@@ -1,10 +1,5 @@
 ---
-title   : CS-323 Operating Systems
-subtitle: Filesystem (1/2)
-author  : Mathias Payer
-date    : EPFL, Fall 2019
----
-
+subtitle: Filesystem API and interface
 ---
 
 # Topics covered in this lecture
@@ -23,11 +18,14 @@ This slide deck covers chapters 39, 40 in OSTEP.
 
 * Given: set of persistent blocks
 * Goal: manage these blocks efficiently. How?
+    * Who has access?
+    * What about initialization / bootstrapping?
+    * Structural organization?
 
 . . .
 
 * Manages data on (usually) nonvolatile storage
-* Enables users to name and manipulate semi-permanent files
+* Enables users to name and manipulate semi-permanent files (select execeutables and their data)
 * Provide mechanisms to organize files and their metadata (e.g., owner, permissions, or type)
 
 ---
@@ -42,28 +40,22 @@ This slide deck covers chapters 39, 40 in OSTEP.
 
 ---
 
-# Sharing and concurrency is hard!
-
-* Consider file permissions change *after* file is opened
-* Consider a file is moved *after* it is opened
-* Consider file owner changes *after* it is opened
-* A process forks, what happens to open files (e.g., read position in file)
-* What happens if two processes concurrently write to the same file?
-* ...
-
----
-
 # The `file` abstraction
 
 * A file is a linear persistent array of bytes
     * Operations: read or write
     * Metaoperations: create, delete, modify permissions/user/...
+* Directory contains subdirectories
+    * List of directories, files, inode mappings
+
+---
+
+# The `file` abstraction
+
 * Different perspectives
     * File name (human readable)
     * Inode and device number (persistent ID)
     * File descriptor (process view)
-* Directory contains subdirectories
-    * List of directories, files, inode mappings
 
 ---
 
@@ -83,9 +75,15 @@ This slide deck covers chapters 39, 40 in OSTEP.
 
 # Different functionality
 
-* Naming: specifies name syntax and encoding, e.g., a URL; may be aware if a file is local/remote
-* Directory access: map name to file object (resolves a string to an object)
-* File access: concerns file operations such as create/delete/read/write
+* ***Naming***
+    * specifies name syntax and encoding
+    * e.g., a URL; may be aware if a file is local/remote
+* ***Directory access***
+    * map name to file object
+    * resolve a string to an object
+* ***File access***
+    * concerns file operations
+    * e.g., create/delete/read/write
 
 ---
 
@@ -101,7 +99,7 @@ This slide deck covers chapters 39, 40 in OSTEP.
 
 . . .
 
-Modern systems all use untyped files.
+Modern systems settled on untyped files.
 
 ---
 
@@ -123,8 +121,10 @@ Modern systems all use untyped files.
 
 # Desired cost of file operations
 
-* Sequential read/write is common, target O(size of transfer)
-* Random access (seeking) is infrequent, target O(log file length)
+* Sequential read/write is common
+    * Design goal: `O(size of transfer)`
+* Random access (seeking) is infrequent
+    * Design goal: `O(log file length)`
 
 . . .
 
@@ -138,7 +138,7 @@ Modern systems all use untyped files.
 
 # The 3 views of a file
 
-* **Operating system:** Inode and device id
+* ***Operating system:*** Inode and device id
     * Ids are unique and great and unambiguous
 * User: file name
 * Process: File descriptor
@@ -154,7 +154,8 @@ Modern systems all use untyped files.
 
 . . .
 
-* Note: multiple file names may map to the same inode (see "hard links")
+* Note: multiple file names may map to the same inode
+    * see "hard links"
 
 ---
 
@@ -197,8 +198,8 @@ Idea: use a dedicated special file to store a mapping from file names to inodes
 
 # The 3 views of a file
 
-* **Operating system:** Inode and device id
-* **User:** file name
+* ***Operating system:*** Inode and device id
+* ***User:*** file name
     * Humans are better at remembering names than numbers
 * Process: File descriptor
 
@@ -235,7 +236,7 @@ Idea: use a dedicated special file to store a mapping from file names to inodes
 # From path to inode (2/2)
 
 * A special file stores mapping between file names and inodes
-* Extend to hierarchy: mark if a file name is a directory or a regular file
+* Extend to hierarchy: mark if a file name maps to a regular file or a directory
     * Access to '/tmp/test.txt' in 3 steps: 'tmp', 'test.txt', contents
 * What data should you store in the directory file (compared to the inode)?
 
@@ -271,7 +272,13 @@ drwxr-xr-x 5 gannimo gannimo  4096 Oct 28 09:50 ..
 # File descriptor (1/4)
 
 * The combination of file names and inode/device id are sufficient to implement persistent storage
+
+. . .
+
 * Drawback: constant lookups from file name to inode/device id are costly
+
+. . .
+
 * Idea: do expensive tree traversal once, store final inode/device number in a per-process table
     * Also keep additional information such as file offset
     * Per process table of open files
@@ -296,9 +303,9 @@ drwxr-xr-x 5 gannimo gannimo  4096 Oct 28 09:50 ..
 \node (I1) at (0,2) [draw,black,ultra thick,minimum width=1cm,minimum height=0.5cm] {};
 \node at (-0.8, 2) {5};
 
-\node (I1) at (4,4.5) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}offset=0 \\ inode= \\ device= \end{tabular}};
+\node (I1) at (4,4.5) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}offset=23 \\ inode=X \\ device=Y \end{tabular}};
 
-\node (I2) at (8,3) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}location= \\ size=\end{tabular}};
+\node (I2) at (8,3) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}location=A \\ size=B\end{tabular}};
 
 \draw [ultra thick, ->](0.5,3) -- (2.93, 5.3);
 \draw [ultra thick, ->](4.8,4.3) -- (6.8, 3.7);
@@ -329,13 +336,13 @@ read(fd1, buf, 23);
 \node (I1) at (0,2) [draw,black,ultra thick,minimum width=1cm,minimum height=0.5cm] {};
 \node at (-0.8, 2) {5};
 
-\node (I1) at (4,4.5) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}offset=0 \\ inode= \\ device= \end{tabular}};
+\node (I1) at (4,4.5) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}offset=23 \\ inode=X \\ device=Y \end{tabular}};
 
-\node (I2) at (8,3) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}location= \\ size=\end{tabular}};
+\node (I2) at (8,3) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}location=A \\ size=B\end{tabular}};
 \draw [ultra thick, ->](0.5,3) -- (2.93, 5.3);
 \draw [ultra thick, ->](4.8,4.3) -- (6.8, 3.7);
 
-\node (I1) at (4,2.5) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}offset=0 \\ inode= \\ device= \end{tabular}};
+\node (I1) at (4,2.5) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}offset=0 \\ inode=X \\ device=Y \end{tabular}};
 \draw [ultra thick, ->](0.5,2.5) -- (2.93, 3.3);
 \draw [ultra thick, ->](4.8,2.3) -- (6.8, 3.7);
 
@@ -367,13 +374,13 @@ int fd2 = open("file.txt");  // returns 4
 \node (I1) at (0,2) [draw,black,ultra thick,minimum width=1cm,minimum height=0.5cm] {};
 \node at (-0.8, 2) {5};
 
-\node (I1) at (4,4.5) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}offset=0 \\ inode= \\ device= \end{tabular}};
+\node (I1) at (4,4.5) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}offset=23 \\ inode=X \\ device=Y \end{tabular}};
 
-\node (I2) at (8,3) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}location= \\ size=\end{tabular}};
+\node (I2) at (8,3) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}location=A \\ size=B\end{tabular}};
 \draw [ultra thick, ->](0.5,3) -- (2.93, 5.3);
 \draw [ultra thick, ->](4.8,4.3) -- (6.8, 3.7);
 
-\node (I1) at (4,2.5) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}offset=0 \\ inode= \\ device= \end{tabular}};
+\node (I1) at (4,2.5) [draw,black,ultra thick,minimum width=2cm,minimum height=1.5cm] {\begin{tabular}{l}offset=0 \\ inode=X \\ device=Y \end{tabular}};
 \draw [ultra thick, ->](0.5,2.5) -- (2.93, 3.3);
 \draw [ultra thick, ->](0.5,2) -- (2.93, 3.3);
 \draw [ultra thick, ->](4.8,2.3) -- (6.8, 3.7);
@@ -410,6 +417,51 @@ The path is only traversed once, the OS can cache inodes and each process keeps 
 * File descriptors are freed upon `close()` or when the process exits
 
 Note, some programs create a temporary file, keep the file descriptor but unlink the file from the directory right after creation. This results in a private temporary file that is recycled when the process exits.
+
+---
+
+# Sharing and concurrency is hard!
+
+* Consider file permissions change *after* file is opened
+* Consider a file is moved *after* it is opened
+* Consider a file is deleted *after* it is opened
+* Consider file owner changes *after* it is opened
+* A process forks, what happens to open files (e.g., read positions)
+* What happens when two processes write to the same file?
+* ...
+
+---
+
+# The curious case of temp files
+
+```.C
+int main(int argc, char* argv[]) {
+  int fd = open("test", O_CREAT | O_RDWR, 0600);
+  // unlink("test"); <- what happens to fd here?
+  char *data = "test";
+  char rdata[64];
+  write(fd, data, strlen(data));
+  sleep(10);
+  lseek(fd, 0, SEEK_SET);
+  read(fd, &rdata, 64);
+  rdata[63] = 0;
+  printf("We read '%s'\n", rdata);
+  close(fd);
+  return 0;
+}
+```
+
+---
+
+# More fun with filesystems: endless files
+
+![](./figures/32-nyancat.gif){width=200px}
+
+* Is it possible for `cat` to run infinitely?
+
+. . .
+
+* `cat /dev/zero`
 
 ---
 

@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Virtual Memory (Segmentation)
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Topics covered in this lecture
@@ -18,11 +15,16 @@ This slide deck covers chapters 13--17 in OSTEP.
 
 # Virtualization
 
-* Virtualization enables isolation, but isolation requires separation. A
-  process must be prohibited to access memory/registers of another process.
-    * Step 1: Virtual CPU provides illusion of private CPU registers (mechanisms and
-      policy)
-    * Step 2: Virtual RAM provides illusion of  private memory
+Goal: isolate processes (and their faults) from each other.
+
+. . .
+
+Virtualization enables isolation, but isolation requires separation.
+A process must be prohibited to access memory/registers of another process.
+
+* Step 1: Virtual CPU provides illusion of private CPU registers (mechanisms and
+  policy)
+* Step 2: Virtual RAM provides illusion of  private memory
 
 ---
 
@@ -56,26 +58,30 @@ This slide deck covers chapters 13--17 in OSTEP.
 
 * **Transparency:** processes are unaware of memory sharing and the existence of other processes
 * **Protection:** OS/other processes are isolated from process (read/write)
-* **Efficiency:** do not waste resources (e.g., fragmentation)
-* **Efficiency:** run close to the metal as much as possible
+* **Efficiency (1):** do not waste resources (e.g., fragmentation)
+* **Efficiency (2):** run as close to the metal as much as possible
 * **Sharing:** processes *may* share part of address space
 
 ---
 
 # Abstraction: address space
 
-* Address space: each process has a set of addresses that map to data
-  (i.e., a map from pointer to byte)
-    * Static: code and global variables
-    * Dynamic: stack, heap
+***Address space***: each process has a set of addresses that map to data
+(i.e., a map from pointers to bytes)
+
+* Static: code and global variables
+* Dynamic: stack, heap
 
 . . .
 
-* Why do we need dynamic memory?
-    * The amount of required memory may be task dependent
-    * Input size may be unknown at compile time
-    * Conservative pre-allocation would be wasteful
-    * Recursive functions (invocation frames)
+Why do we need dynamic memory?
+
+. . .
+
+* The amount of required memory may be task dependent
+* Input size may be unknown at compile time
+* Conservative pre-allocation would be wasteful
+* Recursive functions (invocation frames)
 
 ---
 
@@ -90,7 +96,7 @@ This slide deck covers chapters 13--17 in OSTEP.
 
 . . .
 
-* Simple implementation: bump a pointer or decrement it
+* Straight-forward implementation: bump a pointer or decrement it
     * Note: deallocations must be in reverse order
     * Advantage: no fragmentation, no metadata
 
@@ -98,7 +104,7 @@ This slide deck covers chapters 13--17 in OSTEP.
 
 # Excursion: procedure invocation frames
 
-When calling a function, the runtime system allocates an invocation frame to
+Calling a function allocates an invocation frame to
 store all local variables and the necessary context to return to the callee.
 
 ```.C
@@ -106,9 +112,8 @@ int called(int a, int b) {
   int tmp = a * b;
   return tmp / 42;
 }
-int main(int argc, char *argv[]) {
+void main(int argc, char *argv[]) {
   int tmp = called(argc, argc);
-  return 0;
 }
 ```
 
@@ -121,6 +126,10 @@ What data is stored in the invocation frame of `called`?
 * Slot for the return code pointer
 * Order in most ABIs: RIP, b, a, tmp
 
+. . .
+
+The compiler creates the necessary code, according to the ABI.
+
 ---
 
 # Stack for procedure invocation frames
@@ -128,7 +137,10 @@ What data is stored in the invocation frame of `called`?
 * The stack enables simple storage of function invocation frames
 * Stores calling context and sequence of currently active frames
 * Memory allocated in function call, freed when returned
-* What happens to the data when function returns?
+
+. . .
+
+What happens to the data when function returns?
 
 . . .
 
@@ -137,7 +149,7 @@ What data is stored in the invocation frame of `called`?
 
 ---
 
-# Quiz: stack and persistence
+# Quiz: scopes, stack, and persistence
 
 ```.C
 int a = 2;
@@ -170,7 +182,11 @@ A heap of randomly allocated memory objects with *statically unknown size* and
 *statically unknown allocation patterns*. The size and lifetime of each
 allocated object is unknown.
 
-* How would you manage such a data structure?
+API: `alloc` to create an object, `free` to indicate it is no longer used.
+
+. . .
+
+How would you manage such a data structure?
 
 ---
 
@@ -189,17 +205,36 @@ void free(char *ptr) {}
 ```
 
 * Advantage: simple
-* Disadvantage: no reuse, may run out of memory
+* Disadvantage: no reuse, will run out of memory
+
+---
+
+# Heap: free list
+
+Idea: abstract heap into list of free blocks.
+
+* Keep track of free space, program handles allocated space
+* Keep a list of all available memory objects and their size
+
+Implementation:
+
+* `alloc`: take a free block, split, put remainder back on free list
+* `free`: add block to free list (option: search for adjacent blocks,
+  merge)
 
 ---
 
 # Heap: better implementations
 
-* Must keep track of free space
-* Keep a list of all available memory objects:
-    * Allocation: find a fitting object (first, best, worst fit)
-    * Free: return memory, merge adjacent blocks
-* Implementation: how do we keep track of allocated objects?
+* Allocation: find a fitting object (first, best, worst fit)
+    * first fit: find the first object in the list and split it
+    * best fit: find the object that is closest to the size
+    * worst fit: find the largest object and split it
+
+. . .
+
+* Free: merge adjacent blocks
+    * if the adjacent region is free, merge the two blocks
 
 <!-- TODO: demo implementation -->
 
@@ -208,9 +243,8 @@ void free(char *ptr) {}
 # Heap and OS interaction
 
 * The OS hands the process a large chunk of memory to store heap objects
-* A runtime library (libc) manages this chunk
-* Different memory allocators exist with performance/reliability/security
-  trade-offs
+* A runtime library (the libc) manages this chunk
+* Memory allocators aim for performance, reliability, or security
 
 ---
 
@@ -267,6 +301,9 @@ but storing all of a process' address space is expensive -->
 
 # Tangent: track that memory access
 
+* How many memory accesses are executed? 
+* What kind of memory accesses (read or write)?
+
 ```.ASM
 0x10: mov -0x4(%rbp),%edx
 0x13: mov -0x8(%rbp),%eax
@@ -316,8 +353,12 @@ OS relocates text segment (code area) when new task is started:
 
 . . .
 
+* There is only one address space, no physical/virtual separation
 * Issue 1: no separation between processes (no integrity or confidentiality)
-* Issue 2: fragmentation: address space is occupied/fixed as long as program runs
+* Issue 2: fragmentation, address space remains fixed as long as program runs
+* Issue 3: programs have to be adjusted when loaded (e.g., target of a jump
+  will be at different addresses depending on the location in the address
+  space)
 
 ---
 
@@ -335,10 +376,11 @@ OS relocates text segment (code area) when new task is started:
 * In dynamic relocation, a hardware mechanism translates each memory address
   from the program's viewpoint to the hardware's viewpoint.
 
-> Interposition: the hardware will intercept each memory access and dynamically
-> and transparently translate for the program from virtual addresses (VA) to
-> physical addresses (PA). The OS manages the book keeping of which physical
-> addresses are associated with what processes.
+***Interposition:*** the hardware will intercept each memory access and
+dynamically
+and transparently translate for the program from virtual addresses (VA) to
+physical addresses (PA). The OS manages the book keeping of which physical
+addresses are associated with what processes.
 
 ---
 
@@ -433,8 +475,8 @@ How do you keep the process from modifying the MMU  configuration?
 . . .
 
 No! P1 can access the memory of P2 as the base register is simply added. In the
-previous example, with `base=0x1000`, accessing address $0x2000_{v}$ will access
-the first byte of memory of P2 while P1 is executing!
+previous example, with `base=0x1000`, accessing address $0x2000_{v}$ will
+access the first byte of memory of P2 while P1 is executing!
 
 ---
 
@@ -442,20 +484,21 @@ the first byte of memory of P2 while P1 is executing!
 
 * Simple solution: base and bounds
     * Base register sets minimum address
-    * Bounds register sets maximum address
+    * Bounds register sets size of the address space, highest physical address
+      that is accessible becomes `base+bounds`
 
 * New concept: access check
 
 ```.C
-if (base+addr < bounds) {
+if (addr < bounds) {
   return *(base+addr);
 } else {
   throw new SegFaultException();
 }
 ```
 
-Note: compared to C, assume that addition traps on overflow (i.e., a+b can never
-be smaller than a or b).
+Note: compared to C, assume that addition traps on overflow (i.e., a+b can
+never be smaller than a or b).
 
 ---
 
@@ -506,4 +549,4 @@ the code segment.
 * Base + bounds: share space, limit process' address space
 * Segments: movable segments, virtual offsets to segment base
 
-Don't forget to get your learning feedback through the Moodle quiz!
+Don't forget to fill out the Moodle quiz!

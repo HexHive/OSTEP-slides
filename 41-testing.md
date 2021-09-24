@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Testing (Fuzzing/Sanitization)
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Security
@@ -34,7 +31,7 @@ This slide deck covers [chapter 5.3 in SS3P](https://nebelwelt.net/SS3P/softsec.
 
 # Why testing?
 
-> Testing is the process of *executing code* to *find errors*.
+> Testing is the process of ***executing code*** to ***find errors***.
 
 An error is a deviation between observed behavior and specified behavior, i.e.,
 a violation of the underlying specification:
@@ -94,8 +91,9 @@ Several (many) tools exist:
 
 # Fuzzing
 
-Fuzz testing (fuzzing) is an automated software testing technique. The fuzzing
-engine generates inputs based on some criteria:
+Fuzz testing (fuzzing) is an automated software testing technique. 
+Key idea: execute the target program with an input and check if it crashes.
+The fuzzing engine automatically generates new inputs based on some criteria:
 
 * Random mutation
 * Leveraging input structure
@@ -118,10 +116,10 @@ is generated.
 
 Fuzzers generate new input based on generations or mutations.
 
-* *Generation-based* input generation produces new input seeds in each round,
+* ***Generation-based*** input generation produces new input seeds in each round,
   independent from each other.
 
-* *Mutation-based* input generation leverages existing inputs and modifies
+* ***Mutation-based*** input generation leverages existing inputs and modifies
   them based on feedback from previous rounds.
 
 ---
@@ -131,9 +129,9 @@ Fuzzers generate new input based on generations or mutations.
 Programs accept some form of *input/output* Generally, the input/output is
 structured and follows some form of protocol.
 
-* *Dumb fuzzing* is unaware of the underlying structure.
+* ***Dumb fuzzing*** is unaware of the underlying structure.
 
-* *Smart fuzzing* is aware of the protocol and modifies the input accordingly.
+* ***Smart fuzzing*** is aware of the protocol and modifies the input accordingly.
 
 Example: a checksum at the end of the input. A dumb fuzzer will likely fail the
 checksum.
@@ -145,9 +143,9 @@ checksum.
 The input is processed by the program, based on the *program structure* (and from
 the past executions), input can be adapted to trigger new conditions.
 
-* *White box* fuzzing leverages semantic program analysis to mutate input
-* *Grey box* leverages program instrumentation based on previous inputs
-* *Black box* fuzzing is unaware of the program structure
+* ***White box*** fuzzing leverages semantic program analysis to mutate input
+* ***Grey box*** leverages program instrumentation based on previous inputs
+* ***Black box*** fuzzing is unaware of the program structure
 
 ---
 
@@ -182,7 +180,7 @@ keeping track of paths without having to store paths -->
 
 # Fuzzer challenges: coverage wall
 
-![](./figures/41-coveragewall.png){ width=300px }
+![](./figures/41-coveragewall.png){ width=280px }
 
 ---
 

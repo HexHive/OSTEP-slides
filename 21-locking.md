@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Locking
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Concurrency
@@ -31,6 +28,8 @@ date    : EPFL, Fall 2019
 * Mechanism: interrupt-based locks
 * Mechanism: atomic hardware locks
 * Busy waiting (spin locks) versus wait queues
+
+This slide deck covers chapters 28, 29, 30 in OSTEP.
 
 ---
 
@@ -102,14 +101,14 @@ thread is lost!
 
 # Race conditions
 
-* Concurrent execution leads race conditions
+* Concurrent execution leads to race conditions
     * Access to shared data must be mediated
 * **Critical section:** part of code that accesses shared data
 * **Mutual exclusion:** only one process is allowed to execute critical section at
   any point in time
 * **Atomicity:** critical section executes as an uninterruptible block
 
-A **mechanism** to achieve this behavior is through locking.
+A **mechanism** to achieve atomicity is through locking.
 
 ---
 
@@ -182,6 +181,17 @@ void release(lock_t *l) {
 
 ---
 
+# Interrupting locks (perspective)
+
+* Interrupt-based locks are extremely simple
+* Work well for low-complexity code
+
+. . .
+
+* Implementing locks through interrupts is great for MCUs
+
+---
+
 # (Faulty) spin lock
 
 * Use a shared variable to synchronize access to critical section
@@ -189,12 +199,12 @@ void release(lock_t *l) {
 ```.C
 bool lock1 = false;
 
-void acquire(bool *l) {
+void acquire(bool *lock) {
   while (*lock); /* spin until we grab the lock */
   *lock = true;
 }
 
-void release(bool *l) {
+void release(bool *lock) {
   *lock = false
 }
 ```
@@ -294,7 +304,7 @@ void release(int *l) {
 }
 
 acquire(&lock1);
-critical();
+critical_section();
 release(&lock1);
 ```
 
@@ -304,8 +314,8 @@ release(&lock1);
 
 ```.C
 bool cas(T *ptr, T expt, T new) {
-  if (*T == expt) {
-    *T = new;
+  if (*ptr == expt) {
+    *ptr = new;
     return true;
   }
   return false;

@@ -40,6 +40,7 @@ Note that `texlive-full` is overkill but storage is almost free nowadays.
 
 ## Changelog
 
+* 2020: Heavily reworked slides in the 2nd year (Mathias Payer)
 * 2019: First version of the slides, created from scratch (Mathias Payer)
 
 

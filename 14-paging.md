@@ -1,8 +1,5 @@
 ---
-title   : CS-323 Operating Systems
 subtitle: Virtual Memory (Paging and Swapping)
-author  : Mathias Payer
-date    : EPFL, Fall 2019
 ---
 
 # Topics covered in this lecture
@@ -13,6 +10,35 @@ date    : EPFL, Fall 2019
 * Mechanism: swapping
 
 This slide deck covers chapters 18--22 in OSTEP.
+
+---
+
+# Address spaces
+
+* The ***address space*** encapsulates all addressable memory
+* A system has a certain amount of physical memory, this results in the
+  available physical memory
+* For simplicity, we assume that each address points to a byte
+* Virtual and physical address space size can differ both ways
+* The physically present memory is smaller or equal to the physical address space size
+
+Example: modern 64-bit CPUs have a 48-bit virtual address space (with 64 bit
+pointers) and map to 48 bit of physical address space. Most machines have less
+than 256 TiB of memory.
+
+---
+
+# Memory abstraction
+
+The seven layers of memory abstraction complexity:
+
+* No virtualization, program runs on bare metal
+* Time sharing, one program at a time
+* Space sharing, relocate programs in one shared address space
+* Space sharing, virtual address space through segment (base)
+* Space sharing, virtual address space through segment (base+bounds)
+* Space sharing, virtual address space through multiple segments
+* Space sharing, virtual address space through paging
 
 ---
 
@@ -35,17 +61,21 @@ processes. What are the drawbacks?
 
 . . .
 
-* Space (virtual): each segment must be fully mapped
-* Space (physical): memory must be contiguous (fragmentation)
+* Space: each segment must be fully backed by memory
+* Space: physical memory area must be contiguous (fragmentation)
 * ISA: instructions explicitly or implicitly encode target segment
 
 ---
 
 # Fragmentation
 
-> Definition: free memory that cannot be used. External fragmentation: visible
-> to allocator (OS), e.g., between segments. Internal fragmentation: visible to
-> requester, e.g., rounding if segment size is a power of 2
+> ***Fragmentation***: unused memory that cannot be used. 
+
+> ***External fragmentation***: visible
+> to allocator (OS), e.g., between segments. 
+
+> ***Internal fragmentation***: visible to
+> requester, e.g., rounding if segment size is a power of 2.
 
 For example: we have 16 KiB of memory. Process A has a code segment of 4 KiB
 starting at 2,048, a data segment of 4 KiB starting at 8,096 and a 1 KiB stack
@@ -53,17 +83,50 @@ segment starting at 14,336. The system has 2+2+2+1 = 7 KiB of free memory, but
 the maximum contiguous space is 2 KiB. Starting process B that requires a code
 segment of 3 KiB would not be possible.
 
+\begin{tikzpicture}
+
+\draw [ultra thick](0,0) rectangle (8,1.5);
+\draw [ultra thick, fill=teal](1,0) rectangle (3,1.5);
+\draw [ultra thick, fill=teal](4,0) rectangle (6,1.5);
+\draw [ultra thick, fill=teal](7,0) rectangle (7.5,1.5);
+
+\node at (2, 0.5) {Code};
+\node at (2, 1) {4 KiB};
+\node at (5, 0.5) {Data};
+\node at (5, 1) {4 KiB};
+\node at (7.25, 0.5) {S};
+\node at (7.25, 1) {1};
+
+\node at (0.5, 1) {2 KiB};
+\node at (3.5, 1) {2 KiB};
+\node at (6.5, 1) {2 KiB};
+\node at (7.75, 1) {1};
+
+\end{tikzpicture}
+
 ---
 
 # A more complex MMU: paging
 
-* Goal: eliminate requirement that memory is contiguous
+* Goal: eliminate requirement that physical memory is contiguous
     * Eliminate external fragmentation
     * Grow (and shrink?) segments as needed
 
 * Idea: break address spaces and physical memory into pages
     * Assign memory based on page granularity
     * Still prone to internal fragmentation (round to page size)
+
+---
+
+# Page
+
+* A page is the minimal unit to break up an address space
+* For processes (virtual address space) this is called a (virtual) page
+* As part of the physical address space this is called a frame (or physical
+  page)
+* A system with 12 bit pages implies that
+    * the lowest 12 bit of the address specify the page offset
+    * A page's size is `2^12` bytes (4 KiB) 
 
 ---
 
@@ -133,9 +196,10 @@ segment of 3 KiB would not be possible.
 
 . . .
 
-* Page numbers use 20 bits (i.e., each process may reference $2^{20}$ pages)
-* Frame numbers use 36 bits (there is a maximum of $2^{36}$ physical frames in
-  the system)
+* Page numbers use 20 bits (i.e., each process may reference $2^{20}$ pages
+  of 4 KiB--$2^{12}$--size)
+* Frame numbers use 36 bits (there is a maximum of $2^{36}$ physical 4 KiB
+  frames in the system)
 
 Insight: not all virtual or physical space must be allocated.
 
@@ -144,7 +208,7 @@ Insight: not all virtual or physical space must be allocated.
 # Paging: how to translate from virtual to physical?
 
 Let's assume a 16 bit virtual, a 20 bit physical address space, and 12 bit
-pages.
+for pages.
 
 . . .
 
@@ -178,7 +242,9 @@ draw set of processes and pages, let them fill in page tables
 
 # Paging: storing other per page information
 
-* To align accesses, each entry in the page table is 32 or 64 bit.
+* To align accesses, each entry in 32-bit or 64-bit page tables is 32 or 64 bit
+  (address spaces are byte addressable and bit operations are costly;
+  similarly, power of 2 alignments are faster due to caching).
 * Modern systems store much more information in the page table than just the
   physical frame number:
     * Is the mapping valid?
@@ -256,36 +322,39 @@ accordingly.
 
 # Paging: 32 bit address space
 
-* Assume 12 bit pages, 32 bit virtual and 32 bit physical address space, 4 byte
-  page table entries.
-* What is the size of a page table?
-    * Page table size: entries * size of entry
-    * entries: $2^{log(virtual address space) - log(page size)}$
-    * entries: $2^{32-12} = 2^{20} = 1 MiB$
-    * Page table size: $1 MiB * 4 B = 4 MiB$
+Assume 12 bit for pages, 32 bit virtual and 32 bit physical address space, 4 byte
+page table entries.
+
+* What is the size of a flat page table?
 
 . . .
 
-* Let's assume a 48 bit physical address space and 8 byte entries: 8 MiB
+* Page table size: entries * size of entry
+* entries: $2^{log(virtual address space) - log(page size)}$
+* entries: $2^{32-12} = 2^{20} = 1 MiB$
+* Page table size: $1 MiB * 4 B = 4 MiB$
 
 . . .
 
-* Let's assume a 64 bit virtual address space and 8 byte entries: $2^{52} * 8 B$.
-  Urks, we need something better!
+* Let's assume a 32 bit virtual and 48 bit ***physical address space*** and 8 byte entries: 8 MiB
+
+. . .
+
+* Let's assume a ***64 bit virtual address space*** and 8 byte entries: $2^{52} * 8 B$ (32 PiB).   Urks, we need something better!
 
 ---
 
 # Paging: a multi-level table
 
 Paging was introduced when the average 32 bit system had a total of 4 MiB of
-memory. 4 MiB page tables would leave no memory for the OS or the process.
+memory. 4 MiB of metadata of the page table per process would leave no memory for the OS or the process.
 
-* Insight: most processes only need a tiny fraction of their address space.
+* Insight: most processes only need a fraction of the address space.
 * Goal: only allocate metadata for this fraction
 * Mechanism: a multi-level lookup table.
     * One or more levels of indirection allow space efficient encoding
-    * Each level adds one more memory lookup during address translation
-    * What is a good setup?
+    * Each level adds one more memory lookups during address translation
+    * What is a good trade-off?
 
 ---
 
@@ -384,6 +453,7 @@ memory. 4 MiB page tables would leave no memory for the OS or the process.
   reference is valid, i.e., resides in memory, or not.
     * MMU checks present bit during translation
     * If a page is not present then the MMU triggers a page fault
+    * The OS then enforces its policy to handle the page fault
 * Virtual to physical translation is transparent to executed instructions,
   requires HW support
 
@@ -411,13 +481,15 @@ memory. 4 MiB page tables would leave no memory for the OS or the process.
 
 . . .
 
-* OS handles policy, MMU is the mechanism
+* OS handles ***policy***, MMU is the ***mechanism***
 * MMU handles common case: path to page is valid, page is present
     * Page walk can be highly optimized
     * OS and MMU agree on data structures
 * OS handles policy decisions
     * Allows implementation of flexible policies
     * OS decides which pages are allocated and replaced
+    * OS may also pass information on to the process, e.g., if an
+      illegal access was made
     * No need for extremely high speed as page faults are rare
 
 ---
@@ -429,8 +501,10 @@ memory. 4 MiB page tables would leave no memory for the OS or the process.
 * MMU checks TLB for virtual address
     * TLB miss: MMU executes page walk
         * page table entry is present: update TLB, continue
-        * not present but valid: page fault, switch to OS
-        * invalid: trigger segmentation fault, switch to OS
+        * not present but valid: page fault, switch to OS, OS maps page and
+          transparently returns to the process
+        * invalid: page fault, switch to OS, OS raises SEG fault and passes it
+          to the program
     * TLB hit: obtain physical address, fetch memory location and return to CPU
 
 ---
@@ -445,4 +519,4 @@ memory. 4 MiB page tables would leave no memory for the OS or the process.
 * Paging and swapping allows process to execute with only the working set
   resident in memory, remaining pages can be stored on disk
 
-Don't forget to get your learning feedback through the Moodle quiz!
+Don't forget to get to fill out the Moodle quiz!
