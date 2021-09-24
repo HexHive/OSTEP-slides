@@ -8,7 +8,7 @@ The class follows the excellent [Operating Systems: Three Easy Pieces](https://p
 We break the class into four components:
 
 * Virtualization
-* Cocurrency
+* Concurrency
 * Persistence
 * Security
 
@@ -40,6 +40,7 @@ Note that `texlive-full` is overkill but storage is almost free nowadays.
 
 ## Changelog
 
+* 2021: Updated slides and handout material (Mathias Payer and Sanidhya Kashyap)
 * 2020: Heavily reworked slides in the 2nd year (Mathias Payer)
 * 2019: First version of the slides, created from scratch (Mathias Payer)
 
