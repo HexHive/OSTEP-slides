@@ -48,3 +48,5 @@ Note that `texlive-full` is overkill but storage is almost free nowadays.
 ## References and license
 
 Feel free to reuse these slides but credit [Mathias Payer](https://nebelwelt.net) when reusing the material.
+If you have suggestions on improvements, please let me know before you fire off a huge pull request.
+Notes on small improvements and typos are always welcome!
