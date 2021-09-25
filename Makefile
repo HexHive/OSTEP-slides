@@ -1,5 +1,5 @@
 TITLE="CS323 Operating Systems"
-AUTHOR="Mathias Payer"
+AUTHOR="Mathias Payer and Sanidhya Kashyap"
 DATE="EPFL, Fall 2021"
 
 #SRC=$(shell ls ??-*.md ???-*.md)

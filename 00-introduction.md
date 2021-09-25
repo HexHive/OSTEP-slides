@@ -10,16 +10,23 @@ subtitle: Introduction
 
 ---
 
+# This class provides a safe space
+
+![Equality, Diversity, Dialogue, Responsibility, Tolerance, and Inclusion form
+the basis for a safe space.](./figures/00-safe_space.jpg)
+
+---
+
 # Class organization
 
 * Lectures cover OS design
 * Book: [OSTEP](http://pages.cs.wisc.edu/~remzi/OSTEP/)
 * Five (graded) labs focus on practical OS aspects
-    - C programming
-    - Threading
-    - Concurrency 
-    - File systems (storage)
-    - Security
+    - C programming (out: 09/22; in: 10/05)
+    - Threading (out: 10/06; in: 10/26)
+    - Concurrency (out: 10/27; in: 11/16)
+    - File systems and storage (out: 10/17; in: 12/07)
+    - Security (out: 12/08; in 12/22)
 * TAs handle all labs/homework questions
 * Grading
     - Quizzes after each class (10%)
@@ -50,6 +57,8 @@ subtitle: Introduction
 ---
 
 # What is an Operating System?
+
+. . .
 
 \Begin{multicols}{2}
 
@@ -90,7 +99,7 @@ OS is middleware between applications and hardware.
 * Provides standardized interface to resources
 * Manages hardware
 * Orchestrates currently executing processes
-* Reacts to resource access requests
+* Responds to resource access requests
 * Handles access control
 
 \End{multicols}
@@ -101,7 +110,8 @@ OS is middleware between applications and hardware.
 
 > The OS provides common functionality to access resources.
 > The OS abstracts hardware, provides a unified interface (e.g.,
-> network chips A and B are accessed using the same API).
+> network chips A and B are accessed using the same network API that allows
+> sending and receiving packets).
 
 * Challenges:
     * Defining the correct abstractions (e.g., what level)
@@ -154,7 +164,7 @@ of the bill.
 # OS building blocks
 
 OS design nicely separates into three pillars, with security as a
-transcendental layer covering all pillars.
+transcendental layer covering/overarching all pillars.
 
 \begin{tikzpicture}
 \draw [orange, ultra thick] (0,0) rectangle (2,4);
@@ -225,5 +235,5 @@ and therefore frequently attacked.
 * Understand design decisions
 * Understand system performance
 * Enables understanding of complex systems
-* Turns you into a better programmer
+* Turns you into a better (systems) programmer
 

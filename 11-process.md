@@ -40,19 +40,22 @@ This slide deck covers chapters 4--6 in OSTEP.
 
 # CPU, memory, and disk: limitations
 
-Status quo:
+Status quo[^1]:
 
-* The CPU executes an endless stream of instructions
-* All system memory is in a single physical address space
+* CPUs execute an endless stream of instructions (in memory)
+* All system memory is in a contiguous physical address space
 * The disk is a finite set of blocks
+* All instructions execute in privileged mode
 
 To handle concurrent programs, the OS must *separate* the execution of different
-programs, providing the *illusion* to programs that they are the only running
-program. 
+programs, providing the *illusion* to programs that each program is 
+***the only running program***.
 
 . . .
 
 The ***virtual*** **process abstraction** provides this illusion.
+
+[^1]: Some simplifying assumptions apply to make our life easier.
 
 ---
 
@@ -70,7 +73,7 @@ The ***virtual*** **process abstraction** provides this illusion.
 > A ***process*** is an ***execution stream*** in the context of a 
 > ***process sate***.
 > The execution stream is the sequence of executing instructions (i.e., the
-> "thread of control"). The process state captures everything executing
+> "thread of control"). The process state encompasses everything that executing
 > instructions can affect or are affected by (e.g., registers, address space,
 > persistent state such as files).
 
@@ -147,6 +150,67 @@ minimum height=1.2cm] {code data heap stack};
 * A process can launch multiple ***threads*** of execution in the same address
   space. Each thread receives its own stack but they share global data, code,
   and heap.
+
+---
+
+# Sharing resources: two forms
+
+. . .
+
+\Begin{multicols}{2}
+\begin{tikzpicture}
+\fill [blue] (1.4,1) rectangle (1.6,0.2);
+\fill [blue] (0,0) rectangle (3,0.2);
+
+\draw [ultra thick, purple] (0.2,0) -- (3,0);
+
+\fill [blue] (0,0) rectangle (0.2,-1);
+
+
+\draw [ultra thick, black] (0,0.2) -- (1.4,0.2) -- (1.4,1);
+\draw [ultra thick, black] (1.6,1) -- (1.6,0.2) -- (3,0.2);
+\draw [ultra thick, black] (0,0.2) -- (0,-1);
+\draw [ultra thick, black] (3,0.2) -- (3,-1);
+\draw [ultra thick, black] (0.2,-1) -- (0.2,0) -- (0.7,0) -- (0.7,-1);
+\draw [ultra thick, black] (0.9,-1) -- (0.9,0) -- (1.4,0) -- (1.4,-1);
+\draw [ultra thick, black] (1.6,-1) -- (1.6,0) -- (2.1,0) -- (2.1,-1);
+\draw [ultra thick, black] (2.3,-1) -- (2.3,0) -- (2.8,0) -- (2.8,-1);
+
+\end{tikzpicture}
+
+Time sharing (one at a time)
+
+\begin{tikzpicture}
+\fill [blue] (1.4,1) rectangle (1.6,0.2);
+\fill [blue] (0,0) rectangle (3,0.2);
+
+\draw [ultra thick, purple] (0,0) -- (3,0);
+
+\fill [blue!50] (0,0.03) rectangle (0.1,-1);
+\fill [blue!50] (0.7,0.03) rectangle (0.8,-1);
+\fill [blue!50] (1.4,0.03) rectangle (1.5,-1);
+\fill [blue!50] (2.1,0.03) rectangle (2.2,-1);
+\fill [blue!50] (2.8,0.03) rectangle (2.9,-1);
+
+\draw [ultra thick, black] (0,0.2) -- (1.4,0.2) -- (1.4,1);
+\draw [ultra thick, black] (1.6,1) -- (1.6,0.2) -- (3,0.2);
+\draw [ultra thick, black] (0,0.2) -- (0,-1);
+\draw [ultra thick, black] (3,0.2) -- (3,-1);
+\draw [ultra thick, black] (0.2,-1) -- (0.2,0) -- (0.7,0) -- (0.7,-1);
+\draw [ultra thick, black] (0.9,-1) -- (0.9,0) -- (1.4,0) -- (1.4,-1);
+\draw [ultra thick, black] (1.6,-1) -- (1.6,0) -- (2.1,0) -- (2.1,-1);
+\draw [ultra thick, black] (2.3,-1) -- (2.3,0) -- (2.8,0) -- (2.8,-1);
+
+\end{tikzpicture}
+
+Space sharing (all a little)
+
+\End{multicols}
+
+. . .
+
+* Shared in time (I get to use the toolbox exclusively)
+* Shared in space (I get to pick the two screwdrivers I need)
 
 ---
 
@@ -372,9 +436,9 @@ int main(int argc, char* argv[]) {
 
 ---
 
-# Process API: `exec()`, executing a program
+# Process API: `exec()`, executing a (new) program
 
-* Always copying the same program is boring
+* Always executing the same program is boring
   (we would need one massive program with all functionality, e.g., `emacs`).
 * `exec()` replaces address space, loads new program from disk.
 * Program can pass command line arguments and environment.
@@ -393,9 +457,9 @@ the program.
 
 Let's use divide and conquer:
 
-* `fork()` creates a new process with a copy of the address space
+* `fork()` creates a new process with a copy of this address space
 * `exec()` creates a new address space for a program
-* `clone()` creates a new thread in the same address space
+* `clone()` adds a thread (of execution) to this address space
 
 ---
 
