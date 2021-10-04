@@ -18,7 +18,7 @@ This slide deck covers chapters 7--10 in OSTEP.
 # Scheduling
 
 How does the kernel switch from one
-process to the other?
+process to another?
 
 * System has several `ready` processes
 * For simplicity, we assume one CPU
@@ -27,7 +27,8 @@ How does the kernel stay in control?
 
 . . .
 
-* Configurable timers allow the OS to regain control
+* Processes may `yield()` or execute I/O
+* Configurable timer interrupts let OS take control
 
 . . .
 
@@ -39,7 +40,7 @@ How does the kernel switch from one process to anther?
 
 . . .
 
-Note: a context switch is transparent to the process
+Note: a context switch is ***transparent*** to the process
 
 ---
 
@@ -117,7 +118,7 @@ one process to another, namely by storing its context and restoring the
 context of the other process.
 
 The scheduling policy determines ***which*** process should run next.
-If there is only one "ready' process then the answer is easy. If there are more
+If there is only one "ready" process then the answer is easy. If there are more
 processes then the policy decides in which order processes execute.
 
 ![Scheduling](./figures/12-timetable.png){ width=100px }
@@ -125,6 +126,8 @@ processes then the policy decides in which order processes execute.
 ---
 
 # Scheduler metrics
+
+. . .
 
 When analyzing scheduler policies, we use the following terms:
 
@@ -218,11 +221,15 @@ simplifying assumptions
 
 \End{multicols}
 
+. . .
+
+Finding: easy, simple, straight forward. What are drawbacks?
+
 ---
 
 # Scheduling assumptions
 
-* ~~Each job runs for the same amount of time~~
+* ~~***Each job runs for the same amount of time***~~
 * All jobs arrive at the same time
 * All jobs only use the CPU (no I/O)
 * Run-time of jobs is known
@@ -238,7 +245,6 @@ simplifying assumptions
     * `(6+8+10)/3 = 8`
 * Average response
     * `(0+6+8)/3 = 4.7`
-* Turnaround and response time suffers when short jobs wait for long jobs!
 
 \begin{tikzpicture}[scale=0.5]
 
@@ -254,6 +260,10 @@ simplifying assumptions
 \end{tikzpicture}
 
 \End{multicols}
+
+. . .
+
+Finding: long jobs delay short jobs, turnaround/response time suffer!
 
 ---
 
@@ -300,7 +310,7 @@ New scheduler: choose ready job with shortest runtime!
 # Scheduling assumptions
 
 * ~~Each job runs for the same amount of time~~
-* ~~All jobs arrive at the same time~~
+* ~~***All jobs arrive at the same time***~~
 * All jobs only use the CPU (no I/O)
 * Run-time of jobs is known
 
@@ -331,6 +341,10 @@ New scheduler: choose ready job with shortest runtime!
 
 \End{multicols}
 
+. . .
+
+Finding: long running jobs cannot be interrupted, delay short jobs
+
 ---
 
 # Preemptive scheduling
@@ -338,8 +352,11 @@ New scheduler: choose ready job with shortest runtime!
 * Previous schedulers (FIFO, SJF) are non-preemptive. Non-preemptive schedulers
   only switch to another process if the current process gives up the CPU
   voluntarily.
-* Preemptive schedulers may take control of the CPU at any time, switching to
+* Preemptive schedulers may take CPU control at any time, switching to
   another process according to the scheduling policy.
+
+. . .
+
 * New scheduler: shortest time to completion first (STCF), always run the job
   that will complete the fastest.
 
@@ -352,8 +369,9 @@ New scheduler: choose ready job with shortest runtime!
 * Tasks B, C now arrive at 1
 * Average turnaround
     * `(2+4+10)/3 = 5.3`
-* Average response
+* "First" response
     * `(0+0+2)/3 = 0.7`
+    * Task A takes a break!
 
 \begin{tikzpicture}[scale=0.5]
 
@@ -371,6 +389,10 @@ New scheduler: choose ready job with shortest runtime!
 \end{tikzpicture}
 
 \End{multicols}
+
+. . .
+
+Finding: reschedule whenever new jobs arrive, prioritize short jobs
 
 ---
 
@@ -427,6 +449,8 @@ New scheduler: choose ready job with shortest runtime!
 * Average response time
     * (0+1+2)/3 = 1
 * Compare to FIFO where average response time is 3
+* Turnaround increases
+    * (7+8+9)/3 = 8 for RR (3+6+9)/3 = 6 for SJF
 
 \begin{tikzpicture}[scale=0.5]
 
@@ -452,13 +476,17 @@ New scheduler: choose ready job with shortest runtime!
 
 \End{multicols}
 
+. . .
+
+Finding: responsiveness increases turnaround (for equally long tasks)
+
 ---
 
 # Scheduling assumptions
 
 * ~~Each job runs for the same amount of time~~
 * ~~All jobs arrive at the same time~~
-* ~~All jobs only use the CPU (no I/O)~~
+* ~~***All jobs only use the CPU (no I/O)***~~
 * Run-time of jobs is known
 
 ---
@@ -466,11 +494,13 @@ New scheduler: choose ready job with shortest runtime!
 # I/O awareness
 
 * So far, the scheduler only considers preemptive events (i.e., the timer runs
-  out) or process termination to reschedule.
+  out) or process termination/creation to reschedule.
 
-* If the scheduler is aware of I/O (e.g., loading data from disk) then
-  another process can execute until the data is fetched. I/O operations are
-  incredibly slow and can be carried out asynchronously.
+* I/O is usually incredibly slow and can be carried out asynchronously
+
+. . .
+
+Finding: scheduler must consider I/O, unused time used by others
 
 ---
 
@@ -479,7 +509,7 @@ New scheduler: choose ready job with shortest runtime!
 * ~~Each job runs for the same amount of time~~
 * ~~All jobs arrive at the same time~~
 * ~~All jobs only use the CPU (no I/O)~~
-* ~~Run-time of jobs is known~~
+* ~~***Run-time of jobs is known***~~
 
 ---
 
@@ -487,9 +517,12 @@ New scheduler: choose ready job with shortest runtime!
 
 * Goal: general purpose scheduling
 
+***Challenge:***
 The scheduler must support both long running background
 tasks (batch processes) and low latency foreground tasks (interactive
 processes).
+
+. . .
 
 * Batch process: response time not important, cares for long run times
   (reduce the cost of context switches, cares for lots of CPU, not when)
@@ -525,8 +558,8 @@ processes).
 
 Set of rules adjusts priorities dynamically.
 
-* Rule 1: if `priority(A) > priority(B)` then A runs.
-* Rule 2: if `priority(A) == priority(B)` then A, B run in RR
+* Rule 1: if `prio(A) > prio(B)` then A runs.
+* Rule 2: if `prio(A) == prio(B)` then A, B run in RR
 
 
 ---
@@ -536,7 +569,7 @@ Set of rules adjusts priorities dynamically.
 Goal: use past behavior as predictor for future behavior.
 
 * Rule 3: processes start at top priority
-* Rule 4: if process uses up whole time slice, demote it to lower priority
+* Rule 4: if process uses up full time slice, lower its priority
 
 ---
 
@@ -553,17 +586,17 @@ Low priority tasks may never run on a busy system.
 High priority process could yield before its time slice is up, remaining
 at high priority.
 
-* Rule 4': account for total time at priority level (and not just time
-  of the last time slice)
+* Rule 4': account for total time at priority level
+  (and not just time of the last time slice)
 
 ---
 
 # MLFQ summary
 
-* Rule 1: if `priority(A) > priority(B)` then A runs.
-* Rule 2: if `priority(A) == priority(B)` A, B run in RR
+* Rule 1: if `prio(A) > prio(B)` then A runs.
+* Rule 2: if `prio(A) == prio(B)` A, B run in RR
 * Rule 3: new processes start with top priority
-* Rule 4: demote process to lower priority after whole time slice is used
+* Rule 4: lower process' priority when whole time slice is used
 * Rule 5: periodically move all jobs to the topmost queue
 
 \begin{center}
@@ -627,11 +660,11 @@ at high priority.
 
 # CFS: virtual time
 
-> On real hardware, we can run only a single task at once, so we have to
-> introduce the concept of "virtual runtime."  The virtual runtime of a task
-> specifies when its next timeslice would start execution on the ideal
-> multi-tasking CPU described above.  In practice, the virtual runtime of a task
-> is its actual runtime normalized to the total number of running tasks.
+On real hardware, we can run only a single task at once, so we have to
+introduce the concept of "virtual runtime."  The virtual runtime of a task
+specifies when its next timeslice would start execution on the ideal
+multi-tasking CPU described above.  In practice, the virtual runtime of a task
+is its actual runtime normalized to the total number of running tasks.
 
 * CFS keeps track of how long each process should have executed on an ideal
   processor.
