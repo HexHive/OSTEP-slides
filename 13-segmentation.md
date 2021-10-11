@@ -96,9 +96,9 @@ Why do we need dynamic memory?
 
 . . .
 
-* Straight-forward implementation: bump a pointer or decrement it
-    * Note: deallocations must be in reverse order
+* Straight-forward implementation: bump or decrement a pointer
     * Advantage: no fragmentation, no metadata
+    * Note: deallocations ***must*** be in ***reverse order***
 
 ---
 
@@ -124,7 +124,7 @@ What data is stored in the invocation frame of `called`?
 * Slot for `int tmp`
 * Slots for the parameters a, b
 * Slot for the return code pointer
-* Order in most ABIs: RIP, b, a, tmp
+* Order in most ABIs: b, a, RIP, tmp
 
 . . .
 
@@ -135,8 +135,8 @@ The compiler creates the necessary code, according to the ABI.
 # Stack for procedure invocation frames
 
 * The stack enables simple storage of function invocation frames
-* Stores calling context and sequence of currently active frames
-* Memory allocated in function call, freed when returned
+* Stores calling context and sequence of active parent frames
+* Memory allocated in function prologue, freed when returned
 
 . . .
 
@@ -182,7 +182,7 @@ A heap of randomly allocated memory objects with *statically unknown size* and
 *statically unknown allocation patterns*. The size and lifetime of each
 allocated object is unknown.
 
-API: `alloc` to create an object, `free` to indicate it is no longer used.
+API: `alloc` creates an object, `free` indicates it is no longer used.
 
 . . .
 
@@ -219,8 +219,11 @@ Idea: abstract heap into list of free blocks.
 Implementation:
 
 * `alloc`: take a free block, split, put remainder back on free list
-* `free`: add block to free list (option: search for adjacent blocks,
-  merge)
+* `free`: add block to free list
+
+. . .
+
+What are advantages/disadvantages with this implementation?
 
 ---
 
@@ -328,7 +331,7 @@ but storing all of a process' address space is expensive -->
 0x10: mov -0x4(%rbp),%edx
 0x13: mov -0x8(%rbp),%eax
 0x16: add %edx,%eax
-0x18: call 560 <printf@plt>
+0x18: call 60 <printf@plt>
 ```
 
 OS relocates text segment (code area) when new task is started:
@@ -340,7 +343,7 @@ OS relocates text segment (code area) when new task is started:
 0x1010: mov -0x4(%rbp),%edx   0x5010: mov -0x4(%rbp),%edx
 0x1013: mov -0x8(%rbp),%eax   0x5013: mov -0x8(%rbp),%eax
 0x1016: add %edx,%eax         0x5016: add %edx,%eax
-0x1018: call 560 <printf>     0x5018: call 560 <printf>
+0x1018: call 1060 <printf>    0x5018: call 5060 <printf>
 ```
 
 ---
@@ -417,20 +420,20 @@ How do you keep the process from modifying the MMU  configuration?
 
 . . .
 
-* Separate the execution of the process and the OS, run OS at higher privileges.
-* Higher privileges include special instructions that allow MMU configuration
+* Separation: OS runs at higher privileges than process
+* OS privileges include special instructions for MMU config
 * Switch from user-space (process) to kernel space through system call (special
   call instruction)
-* OS returns from privileged mode to user mode (special return instruction)
+* OS returns to unprivileged user mode (with special return)
 * Exceptions in user space (e.g., illegal memory access, division by 0) switch
-  to privileged mode and allow OS to handle the exception
+  to privileged mode, OS handles the exception
 
 ---
 
 # A simple MMU: base register
 
 * Idea: translate virtual to physical addresses by adding offset.
-* Store offset in special register (controlled by OS, used by MMU).
+* Store offset in special register (OS controlled, used by MMU).
 * Each process has a different offset in their base register
 
 ---
@@ -484,8 +487,8 @@ access the first byte of memory of P2 while P1 is executing!
 
 * Simple solution: base and bounds
     * Base register sets minimum address
-    * Bounds register sets size of the address space, highest physical address
-      that is accessible becomes `base+bounds`
+    * Bounds register sets (virtual) limit of the address space, highest
+      physical address that is accessible becomes `base+bounds`
 
 * New concept: access check
 
@@ -497,8 +500,8 @@ if (addr < bounds) {
 }
 ```
 
-Note: compared to C, assume that addition traps on overflow (i.e., a+b can
-never be smaller than a or b).
+Note: bounds can either store the size of the address space or the upper
+memory address; this is an implementation choice.
 
 ---
 
@@ -518,12 +521,12 @@ never be smaller than a or b).
 
 # A simple MMU: segmentation
 
-Instead of a single base/bounds register pair, have one pair per memory area
+Instead of a single base/bounds register pair, have one pair per memory area:
 
-* Code registers (CS on x86, default for instructions)
-* Data registers (DS on x86, default for data accesses)
-* Stack registers (SS on x86, default for push/pop)
-* Extra registers (ES, FS, and GS on x86)
+* Code Segment (CS on x86, default for instructions)
+* Data Segment (DS on x86, default for data accesses)
+* Stack Segment (SS on x86, default for push/pop)
+* Extra Segments (ES, FS, and GS on x86, for anything else)
 
 Allow a process to have several regions of continuous memory mapped from a
 virtual address space to a physical address space. 
