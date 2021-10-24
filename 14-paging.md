@@ -222,10 +222,11 @@ register (`CR3` on x86):
 
 ```.C
 unsigned char v1[16];
-
 void *toPhys(void *ptr) {
   void *offset = ptr & (1<<12-1);
+  // Page for process: Virtual bits & (1 << (16-12) - 1)
   unsigned int idx = (unsigned int)((ptr>>12) & (1<<4-1));
+  // Get physical offset
   return (void*)(((unsigned int)(v1[idx])<<12) | offset);
 }
 ```
@@ -288,8 +289,8 @@ The OS and the MMU agree on the interpretation of these bits.
     * Simple to adjust what subset is mapped *in core* (later)
 
 * Disadvantages
-    * Internal fragmentation (tension regarding page size)
     * Additional memory reference to page table (hint: use a cache)
+    * Internal fragmentation (tension regarding page size)
     * Required space for page table may be substantial
 
 ---
@@ -317,6 +318,14 @@ accordingly.
 * This cache is called TLB (Translation Lookaside Buffer)
 * Reduces requirement memory accesses for page walk
 * If there is an entry in the TLB, reuse!
+
+---
+
+# Paging: The page size tension
+
+* Comes from the past systems that had 100KBs of memory.
+* TLB addressing pages.
+* Disk swapping issue (discussed later).
 
 ---
 
@@ -436,7 +445,7 @@ memory. 4 MiB of metadata of the page table per process would leave no memory fo
 # Swapping: when main memory runs out
 
 * Observation: main memory may not be enough for all memory of all processes
-* Idea: store unused pages of address space on disk
+* Idea: store unused pages of address space on the disk
     * Allows the OS to reclaim memory when necessary
     * Allows the OS to over-provision (hand out more memory than physically
       available)
@@ -465,7 +474,7 @@ memory. 4 MiB of metadata of the page table per process would leave no memory fo
 * Page fault handler checks where (which process and what address) the fault happened
     * Which process? (Locate data structures)
     * What address? (Search page in page table)
-* If page is on disk: OS issues load request and tells scheduler to switch to
+* If page is on the disk: OS issues load request and tells scheduler to switch to
   another process
 * If page is still in memory or can be reproduced (e.g., a zero page), then the
   OS creates it and updates data structures
@@ -517,6 +526,6 @@ memory. 4 MiB of metadata of the page table per process would leave no memory fo
     * Multi-level page table
     * Pros? Cons? What are size requirements?
 * Paging and swapping allows process to execute with only the working set
-  resident in memory, remaining pages can be stored on disk
+  resident in memory, remaining pages can be stored on the disk
 
 Don't forget to get to fill out the Moodle quiz!
