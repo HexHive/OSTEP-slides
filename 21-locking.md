@@ -33,12 +33,29 @@ This slide deck covers chapters 28, 29, 30 in OSTEP.
 
 ---
 
-# Difference parallelism and concurrency
+# Threads: Executions context
 
-* Threads are independent execution contexts scheduled in a single address space
-* Parallelism: multiple threads (or processes) working on a single task using
+* Threads are independent execution context
+* Similar to processes
+
+. . .
+
+* Except that they share the same address space
+
+. . .
+
+* Why do we need threads?
+
+. . .
+
+* CPUs run very fast, they might get blocked for fetching data
+* Multiples of CPUs are available that can do a job in parallel
+
+# For parallelism and concurrency
+
+* **Parallelism**: multiple threads (or processes) working on a single task using
   multiple CPU cores
-* Concurrency: tasks can start, run, and complete in overlapping time periods,
+* **Concurrency**: tasks can start, run, and complete in overlapping time periods,
   e.g., through time multiplexing by interleaving their executions, or through
   parallelism when they are executed at the same time
 
@@ -46,6 +63,7 @@ Note that processes can share information through partially overlapping address
 spaces or by communicating (future lectures).
 
 ---
+
 
 # Race conditions
 
@@ -142,8 +160,8 @@ unlock(&mutex);
 
 # Lock operations
 
-* `void lock(lock_t *lck)`: acquires lock, current thread owns lock when function returns
-* `void unlock(lock_t *lck)`: releases lock
+* `void lock(lock_t *lck)`: acquires the lock, current thread owns the lock when function returns
+* `void unlock(lock_t *lck)`: releases the lock
 
 . . .
 
@@ -173,8 +191,8 @@ void release(lock_t *l) {
 
 # Interrupting locks (disadvantages)
 
-* No support for nested locking (i.e., locking multiple locks)
-* Only works on uniprocessors (no support for locking across cores)
+* No support for locking multiple locks
+* Only works on uniprocessors (no support for locking across cores in multicore system)
 * Process may keep lock for arbitrary length
 * Hardware interrupts may get lost (hardware only stores information that
   interrupt X happened, not how many times it happened)
@@ -213,44 +231,6 @@ void release(bool *lock) {
 
 Bug: both threads can grab the lock if thread is preempted before setting the
 lock but after the `while` loop completes.
-
----
-
-# Peterson's spin lock
-
-```.C
-struct lock {
-  unsigned int turn = 0;
-  bool lock[2] = {false, false}; /* 2 threads max */
-} lock1;
-
-/* thread-local id */
-__thread unsigned int tid = TID; /* assign {0, 1} */
-
-void acquire(struct lock *l) {
-  l->lock[tid] = true;
-  l->turn = 1-tid;
-  while (l->lock[1-tid] && l->turn == 1-tid); /* wait */
-}
-
-void release(struct lock *l) {
-  l->lock[tid] = false;
-}
-```
-
----
-
-# Peterson's spin lock
-
-* Mutual exclusion: enter lock only iff
-    * Other thread does not want to enter
-    * Other thread wants to enter but it is our turn
-* Progress: either thread passes depending on the write to `turn`
-* Bounded wait: other process waits only one critical section
-
-. . .
-
-Problem: on current hardware independent writes may not be ordered and cache coherency will delay visibility across cores.
 
 ---
 
@@ -372,7 +352,7 @@ void acquire(bool *lck) {
 
 . . .
 
-Spinlocks are unfair (threads race for lock) and performance hogs (spinning and burning CPU time)!
+Spinlocks are unfair (threads race for lock) and hog performance (spinning and burning CPU time)!
 
 ---
 
