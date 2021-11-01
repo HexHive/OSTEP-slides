@@ -19,27 +19,30 @@ In concurrent programming, a common scenario is one thread waiting for
 another thread to complete an action.
 
 ```.C++
-bool done = false;
-
-/* called in the child to signal termination */
-void thr_exit() {
-  done = true;
-}
-/* called in the parent to wait for a child thread */
-void thr_join() {
-  while (!done);
-}
+1  bool done = false;
+2
+3  /* called in the child to signal termination */
+4  void thr_exit() {
+5   done = true;
+6  }
+7  /* called in the parent to wait for a child thread */
+8  void thr_join() {
+9    while (!done);
+10 }
 ```
 
 ---
 
 # Condition variables (CV)
 
-* Locks enable mutual exclusion of a shared region
-  unfortunately they are oblivious to ordering
+* Locks enable mutual exclusion of a shared region.
+  	* Unfortunately they are oblivious to ordering
 * Waiting and signaling (i.e., T2 waits until T1 completes a given task)
   could be implemented by spinning until the value changes
-* But spinning is incredibly inefficient
+
+. . .
+
+* But spinning is incredibly _inefficient_
 
 . . .
 
@@ -49,9 +52,11 @@ void thr_join() {
 
 # Condition variables (CV)
 
-* A CV allows a thread to wait for a condition
-    * Usually implemented as queues
+* A CV allows:
+    * A thread to wait for a condition
     * Another thread signals the waiting thread
+
+* Implement CV using queues
 
 . . .
 
@@ -66,23 +71,23 @@ void thr_join() {
 # Signal parent that child has exited
 
 ```.C++
-bool done = false;
-pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t c = PTHREAD_COND_INITIALIZER;
-/* called in the child to signal termination */
-void thr_exit() {
-  pthread_mutex_lock(&m);
-  done = true;
-  pthread_cond_signal(&c);
-  pthread_mutex_unlock(&m);
-}
-/* called in the parent to wait for a child thread */
-void thr_join() {
-  pthread_mutex_lock(&m);
-  while (!done)
-    pthread_cond_wait(&c, &m);
-  pthread_mutex_unlock(&m);
-}
+1  bool done = false;
+2  pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+3  pthread_cond_t c = PTHREAD_COND_INITIALIZER;
+4  /* called in the child to signal termination */
+5  void thr_exit() {
+6    pthread_mutex_lock(&m);
+7    done = true;
+8    pthread_cond_signal(&c);
+9    pthread_mutex_unlock(&m);
+10  }
+11 /* called in the parent to wait for a child thread */
+12 void thr_join() {
+13  pthread_mutex_lock(&m);
+14  while (!done)
+15    pthread_cond_wait(&c, &m);
+16  pthread_mutex_unlock(&m);
+17 }
 ```
 
 ---
@@ -91,22 +96,36 @@ void thr_join() {
 
 * `pthread_cond_wait(pthread_cond_t *c, pthread_mutex_t *m)`
     * Assume mutex `m` is held; *atomically* unlock mutex when waiting, retake it when waking up
-* Principle: checking condition before sleeping
-    * Thread may have already exited, i.e., no need to wait
-* Principle: `while` instead of `if` when waiting
-    * Multiple threads could be woken up, racing for `done` flag
+* Question: Why do we need to check a condition before sleeping?
+
+. . .
+
+* Thread may have already exited, i.e., no need to wait
+    * Principle: Check the condition before sleeping
+
+. . .
+
+* Question: Why can't we use `if` when waiting?
+
+. . .
+
+* Multiple threads could be woken up, racing for `done` flag
+    * Principle: `while` instead of `if` when waiting
 
 ---
 
 # Signal parent that child has exited (3)
 
-* Lock (mutex) for concurrent access to `done` protects against missed updates
+* Question: Why do we need to proctect `done` with mutex `m`?
+
+. . .
+
+* Mutex `m` allows one thread to access `done` for protecting against missed updates
     * Parent reads `done == false` but is interrupted
-    * Child sets `done = true` and signals but noone is waiting
+    * Child sets `done = true` and signals but no one is waiting
     * Parent continues and goes to sleep (forever)
 * Lock is therefore required for wait/signal synchronization
 
-Demo: `22-thread_exit.c`
 
 ---
 
@@ -162,20 +181,20 @@ Demo: `22-thread_exit.c`
 # Concurrent programming: producer consumer
 
 ```.C
-void *producer(void *arg) {
-	unsigned int max = (unsigned int)arg;
-	for (unsigned int i = 0; i < max; i++) {
-		put(i); // store in shared buffer
-	}
-	return NULL;
-}
-void *consumer(void *arg) {
-	unsigned int max = (unsigned int)arg;
-	for (unsigned int i = 0; i < max; i++) {
-		printf("%d\n", get(i)); // recv from buffer
-	}
-	return NULL;
-}
+1 void *producer(void *arg) {
+2 	unsigned int max = (unsigned int)arg;
+3 	for (unsigned int i = 0; i < max; i++) {
+4   		put(i); // store in shared buffer
+5	}
+6 	return NULL;
+7 }
+8 void *consumer(void *arg) {
+9 	unsigned int max = (unsigned int)arg;
+10	for (unsigned int i = 0; i < max; i++) {
+11		printf("%d\n", get(i)); // recv from buffer
+12	}
+13	return NULL;
+14 }
 pthread_t p, c;
 pthread_create(&p, NULL, &producer, (void*)NUMITEMS);
 pthread_create(&c, NULL, &consumer, (void*)NUMITEMS);
@@ -186,19 +205,19 @@ pthread_create(&c, NULL, &consumer, (void*)NUMITEMS);
 # Concurrent programming: producer consumer
 
 ```.C
-unsigned int buffer[BUFSIZE] = { 0 };
-unsigned int cpos = 0, ppos = 0;
-
-void put(unsigned int val) {
-	buffer[ppos] = val;
-	ppos = (ppos + 1) % BUFSIZE;
-}
-
-unsigned int get() {
-	unsigned long val = buffer[cpos];
-	cpos = (cpos + 1) % BUFSIZE;
-	return val;
-}
+1  unsigned int buffer[BUFSIZE] = { 0 };
+2  unsigned int cpos = 0, ppos = 0;
+3
+4  void put(unsigned int val) {
+5 	buffer[ppos] = val;
+6	ppos = (ppos + 1) % BUFSIZE;
+7  }
+8
+9  unsigned int get() {
+10	unsigned long val = buffer[cpos];
+11	cpos = (cpos + 1) % BUFSIZE;
+12	return val;
+13 }
 ```
 
 What are the issues in this code?
@@ -227,17 +246,17 @@ sem_init(&csem, 0, 0);
 # Producer: semaphores
 
 ```.C
-void put(unsigned int val) {
-	/* we wait until there is buffer space available */
-	sem_wait(&psem);
-
-	/* store element in buffer */
-	buffer[ppos] = val;
-	ppos = (ppos + 1) % BUFSIZE;
-
-	/* notify consumer that data is available */
-	sem_post(&csem);
-}
+1  void put(unsigned int val) {
+2	/* we wait until there is buffer space available */
+3	sem_wait(&psem);
+4
+5	/* store element in buffer */
+6	buffer[ppos] = val;
+7	ppos = (ppos + 1) % BUFSIZE;
+8
+9	/* notify consumer that data is available */
+10	sem_post(&csem);
+11 }
 ```
 
 ---
@@ -245,18 +264,18 @@ void put(unsigned int val) {
 # Consumer: semaphores
 
 ```.C
-unsigned int get() {
-	/* wait until data is produced */
-	sem_wait(&csem);
-
-	/* consumer entry */
-	unsigned long val = buffer[cpos];
-	cpos = (cpos + 1) % BUFSIZE;
-
-	/* notify producer that a space has freed up */
-	sem_post(&psem);
-	return val;
-}
+1  unsigned int get() {
+2	/* wait until data is produced */
+3	sem_wait(&csem);
+4
+5	/* consumer entry */
+6	unsigned long val = buffer[cpos];
+7	cpos = (cpos + 1) % BUFSIZE;
+8
+9	/* notify producer that a space has freed up */
+10	sem_post(&psem);
+11	return val;
+12 }
 ```
 
 ---
@@ -272,7 +291,6 @@ unsigned int get() {
 * How would you handle multiple producers/consumers?
     * Currently no synchronization between producers (or consumers)
 
-Demo: `22-producer.c`
 
 ---
 
@@ -280,21 +298,21 @@ Demo: `22-producer.c`
 
 ```.C
 /* mutex handling mutual exclusive access to ppos */
-pthread_mutex_t pmutex = PTHREAD_MUTEX_INITIALIZER;
-
-void put(unsigned int val) {
-	unsigned int mypos;
-	/* we wait until there is buffer space available */
-	sem_wait(&psem);
-	/* ppos is shared between all producers */
-	pthread_mutex_lock(&pmutex);
-	mypos = ppos;
-	ppos = (ppos + 1) % BUFSIZE;
-	/* store information in buffer */
-	buffer[mypos] = val;
-	pthread_mutex_unlock(&pmutex);
-	sem_post(&csem);
-}
+1  pthread_mutex_t pmutex = PTHREAD_MUTEX_INITIALIZER;
+2
+3  void put(unsigned int val) {
+4	unsigned int mypos;
+5	/* we wait until there is buffer space available */
+6	sem_wait(&psem);
+7	/* ppos is shared between all producers */
+8	pthread_mutex_lock(&pmutex);
+9	mypos = ppos;
+10	ppos = (ppos + 1) % BUFSIZE;
+11	/* store information in buffer */
+12	buffer[mypos] = val;
+13	pthread_mutex_unlock(&pmutex);
+14	sem_post(&csem);
+15 }
 ```
 
 ---
@@ -312,12 +330,12 @@ void put(unsigned int val) {
 # Implementing a mutex with a semaphore
 
 ```.C
-sem_t sem;
-sem_init(&sem, 1);
-
-sem_wait(&sem);
-... // critical section
-sem_post(&sem);
+1 sem_t sem;
+2 sem_init(&sem, 1);
+3
+4 sem_wait(&sem);
+5 ... // critical section
+6 sem_post(&sem);
 ```
 
 ---
@@ -325,17 +343,17 @@ sem_post(&sem);
 # Implementing a semaphore with CV/locks
 
 ```.C
-typedef struct {
-	int value;            // sem value
-	pthread_mutex_t lock; // access to sem
-	pthread_cond_t cond;  // wait queue
-} sem_t;
-
-void sem_init(sem_t *s, int val) {
-	s->value = val;
-	pthread_mutex_init(&(s->lock), NULL);
-	pthread_cond_init(&(s->cond), NULL);
-}
+1  typedef struct {
+2	int value;            // sem value
+3	pthread_mutex_t lock; // access to sem
+4	pthread_cond_t cond;  // wait queue
+5  } sem_t;
+6
+7  void sem_init(sem_t *s, int val) {
+8 	s->value = val;
+9	pthread_mutex_init(&(s->lock), NULL);
+10	pthread_cond_init(&(s->cond), NULL);
+11 }
 ```
 
 ---
@@ -343,23 +361,22 @@ void sem_init(sem_t *s, int val) {
 # Implementing a semaphore with CV/locks
 
 ```.C
-void sem_wait(sem_t *s) {
-	pthread_mutex_lock(&(s->lock));
-	while (s->value <= 0)
-		pthread_cond_wait(&(s->cond), &(s->lock));
-	s->value--;
-	pthread_mutex_unlock(&(s->lock));
-}
-
-void sem_post(sem_t *s) {
-	pthread_mutex_lock(&(s->lock));
-	s->value++;
-	pthread_cond_signal(&(s->cond));
-	pthread_mutex_unlock(&(s->lock));
-}
+1  void sem_wait(sem_t *s) {
+2	pthread_mutex_lock(&(s->lock));
+3	while (s->value <= 0)
+4		pthread_cond_wait(&(s->cond), &(s->lock));
+5	s->value--;
+6	pthread_mutex_unlock(&(s->lock));
+7  }
+8
+9  void sem_post(sem_t *s) {
+10	pthread_mutex_lock(&(s->lock));
+11	s->value++;
+12	pthread_cond_signal(&(s->cond));
+13	pthread_mutex_unlock(&(s->lock));
+14  }
 ```
 
-Demo: `22-semaphore.c`
 
 ---
 
@@ -377,21 +394,21 @@ Demo: `22-semaphore.c`
 # Reader/writer locks
 
 ```.C
-void rwlock_acquire_readlock(rwlock_t *rw) {
-  sem_wait(&rw->lock);
-  rw->readers++;
-  if (rw->readers == 1)
-    sem_wait(&rw->wlock); // first r, also grab wlock
-  sem_post(&rw->lock); 
-}
-
-void rwlock_release_readlock(rwlock_t *rw) {
-  sem_wait(&rw->lock);
-  rw->readers--;
-  if (rw->readers == 0)
-    sem_post(&rw->wlock); // last r, also release wlock
-  sem_post(&rw->lock);
-} 
+1  void rwlock_acquire_readlock(rwlock_t *rw) {
+2   sem_wait(&rw->lock);
+3   rw->readers++;
+4   if (rw->readers == 1)
+5      sem_wait(&rw->wlock); // first r, also grab wlock
+6   sem_post(&rw->lock); 
+7  }
+8
+9  void rwlock_release_readlock(rwlock_t *rw) {
+10  sem_wait(&rw->lock);
+11  rw->readers--;
+13  if (rw->readers == 0)
+14    sem_post(&rw->wlock); // last r, also release wlock
+15  sem_post(&rw->lock);
+16 }
 ```
 
 ---
@@ -410,16 +427,16 @@ void rwlock_release_readlock(rwlock_t *rw) {
 One thread checks value and prints it while another thread concurrently modifies it.
 
 ```.C
-int shared = 24;
-
-void T1() {
-	if (shared > 23) {
-		printf("Shared is >23: %d\n", shared);
-	}
-}
-void T2() {
-	shared = 12;
-}
+1  int shared = 24;
+2
+3  void T1() {
+4	if (shared > 23) {
+5		printf("Shared is >23: %d\n", shared);
+6	}
+7  }
+8  void T2() {
+9	shared = 12;
+10 }
 ```
 
 . . .
