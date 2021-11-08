@@ -221,7 +221,7 @@ But how do devices work?
 \draw [red, ultra thick, dotted] (-2.95,4) -- (2.95,4);
 
 \node at (0, 3) {Microcontroller (CPU+RAM)};
-\node at (0, 2.3) {Storage (RAM/Flash)};
+\node at (0, 2.3) {Storage (ROM/Flash)};
 \node at (0, 1.6) {Special purpose chips};
 
 \node at (5, 3.6) {(Device internals)};
@@ -391,7 +391,7 @@ Where do you see problems?
 
 . . .
 
-* Both are used in practice. ARM uses MMIO, x86 uses ports. Differences are a matter of choice and preference.
+* Both are used in practice. Architectures now support both. Differences are a matter of choice and preference.
 
 ---
 
