@@ -16,7 +16,7 @@ This slide deck covers chapters 39, 40 in OSTEP.
 
 # Purpose of a file system (1/2)
 
-* Given: set of persistent blocks
+* Given: set of persistent blocks from a storage device
 * Goal: manage these blocks efficiently. How?
     * Who has access?
     * What about initialization / bootstrapping?
@@ -24,7 +24,7 @@ This slide deck covers chapters 39, 40 in OSTEP.
 
 . . .
 
-* Manages data on (usually) nonvolatile storage
+* Manages data (mostly) on nonvolatile storage
 * Enables users to name and manipulate semi-permanent files (select execeutables and their data)
 * Provide mechanisms to organize files and their metadata (e.g., owner, permissions, or type)
 
@@ -43,8 +43,8 @@ This slide deck covers chapters 39, 40 in OSTEP.
 # The `file` abstraction
 
 * A file is a linear persistent array of bytes
-    * Operations: read or write
-    * Metaoperations: create, delete, modify permissions/user/...
+    * Data operations: read or write
+    * Metadata operations: create, delete, modify permissions/user/...
 * Directory contains subdirectories
     * List of directories, files, inode mappings
 
@@ -99,7 +99,10 @@ This slide deck covers chapters 39, 40 in OSTEP.
 
 . . .
 
-Modern systems settled on untyped files.
+* Modern systems settled on untyped files.
+* Each file now has attributes or even extended attributes.
+    * executable, append only, COW etc.
+    * check manpage for `chattr`
 
 ---
 
@@ -186,19 +189,22 @@ Modern systems settled on untyped files.
 
 # Table of inodes (2/2)
 
-* Storage space is split into fixed size inode table and data storage
+* Storage space is split into inode table and data storage
+  * Initial prototypes used static sized table and data storage
 * Files are statically allocated
 * Need to remember inode number to access file content
 
 . . .
 
-Idea: use a dedicated special file to store a mapping from file names to inodes
+* Idea: Use a dedicated place at the beginning of the storage medium, mostly
+  initial blocks on the storage medium
+    * A dedicated special file to store a mapping from file names to inodes
 
 ---
 
 # The 3 views of a file
 
-* ***Operating system:*** Inode and device id
+* Operating system: Inode and device id
 * ***User:*** file name
     * Humans are better at remembering names than numbers
 * Process: File descriptor
@@ -246,14 +252,14 @@ Idea: use a dedicated special file to store a mapping from file names to inodes
 
 ```
 $ ls -al
-total 180
-drwxr-xr-x 6 gannimo gannimo  4096 Nov  6 11:54 .
-drwxr-xr-x 5 gannimo gannimo  4096 Oct 28 09:50 ..
--rw-r--r-- 1 gannimo gannimo  5978 Sep 30 09:28 00-intr.md
--rw-r--r-- 1 gannimo gannimo 12430 Nov  6 11:54 11-proc.md
--rw-r--r-- 1 gannimo gannimo 15071 Nov  6 11:54 12-sche.md
--rw-r--r-- 1 gannimo gannimo 13157 Oct 21 10:55 13-segm.md
--rw-r--r-- 1 gannimo gannimo 14824 Oct 17 09:51 14-page.md
+drwxr-xr-x 6 sanidhya sanidhya  4096 Nov 15 13:38 .
+drwxr-xr-x 5 sanidhya sanidhya  4096 Nov  1 13:52 ..
+-rw-r--r-- 1 sanidhya sanidhya  6830 Nov  1 13:52 00-intro.md
+-rw-r--r-- 1 sanidhya sanidhya 16726 Nov  1 13:52 11-proc.md
+-rw-r--r-- 1 sanidhya sanidhya 19316 Nov  1 13:52 12-sched.md
+-rw-r--r-- 1 sanidhya sanidhya 14048 Nov  1 13:52 13-seg.md
+-rw-r--r-- 1 sanidhya sanidhya 17495 Nov  1 13:52 14-pg.md
+-rw-r--r-- 1 sanidhya sanidhya  3603 Nov  1 13:52 15-virt.md
 ```
 
 * '`.`'' maps to the current, '`..`'' maps to the next higher directory
@@ -262,10 +268,10 @@ drwxr-xr-x 5 gannimo gannimo  4096 Oct 28 09:50 ..
 
 # The 3 views of a file
 
-* **Operating system:** Inode and device id
-* **User:** file name
+* Operating system: Inode and device id
+* User: file name
 * **Process:** File descriptor
-    * Keep track of per-process state (e.g., read position or name, inode mapping)
+    * Keeps track of per-process state (e.g., read position or name, inode mapping)
 
 ---
 
@@ -473,7 +479,7 @@ int main(int argc, char* argv[]) {
     * DVD/BlueRay drive
     * USB stick
     * Network Attached Storage
-    * Floppy disk (lol)
+    * Floppy disk
 * How do you organize, manage, and display all these file systems?
 
 ---
