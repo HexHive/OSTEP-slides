@@ -82,10 +82,12 @@ Recommended reading: [A Few Billion Lines of Code Later: Using Static Analysis t
 
 # How to measure code coverage?
 
-Several (many) tools exist:
+Several approaches exist, all rely on instrumentation:
 
 * gcov: <https://gcc.gnu.org/onlinedocs/gcc/Gcov.html>
 * SanitizerCoverage: <https://clang.llvm.org/docs/SourceBasedCodeCoverage.html>
+
+Sampling may reduce collection cost at slight loss of precision.
 
 ---
 
@@ -106,9 +108,9 @@ is generated.
 
 # Fuzzing effectiveness
 
-* Fuzzing finds bugs effectively (CVEs)
-* Proactive defense, part of testing
-* Preparing offense, part of exploit development
+* Fuzzing finds bugs effectively (CVEs---unique bug numbers)
+* Proactive defense during software development/testing
+* Preparing offense, as part of exploit development
 
 ---
 
@@ -126,7 +128,7 @@ Fuzzers generate new input based on generations or mutations.
 
 # Fuzz input structure awareness
 
-Programs accept some form of *input/output* Generally, the input/output is
+Programs accept some form of *input/output*. Generally, the input/output is
 structured and follows some form of protocol.
 
 * ***Dumb fuzzing*** is unaware of the underlying structure.
@@ -140,32 +142,32 @@ checksum.
 
 # Fuzz program structure awareness
 
-The input is processed by the program, based on the *program structure* (and from
-the past executions), input can be adapted to trigger new conditions.
+Input is processed by the program, based on the *program structure* (past executions), input can be adapted to trigger new conditions.
 
-* ***White box*** fuzzing leverages semantic program analysis to mutate input
-* ***Grey box*** leverages program instrumentation based on previous inputs
-* ***Black box*** fuzzing is unaware of the program structure
+* ***White-box*** fuzzing leverages (expensive) semantic program analysis to
+  mutate input; often does not scale
+* ***Grey-box*** leverages program instrumentation based on previous inputs;
+  light runtime cost, scales to large programs
+* ***Black-box*** fuzzing is unaware of the program structure; often cannot
+  explore beyond simple/early functionality
 
 ---
 
-# Coverage-guided grey box fuzzing
+# Coverage-guided grey-box fuzzing
 
 ![](./figures/41-fuzzing.png){ width=400px }
 
 ---
 
-# American Fuzzy Lop
+# American Fuzzy Lop (++)
 
-* AFL is the most well-known fuzzer currently
+* AFL++ is a well-established fuzzer
 * AFL uses grey-box instrumentation to track branch coverage and mutate fuzzing
   seeds based on previous branch coverage
-* The branch coverage tracks the last two executed basic blocks
-* New coverage is detected on the history of the last two branches: `cur XOR prev>>1`
+* Branch coverage tracks frequency of executed edges between basic blocks
+* Global coverage map keeps track of "power of two" changes
 * AFL: <http://lcamtuf.coredump.cx/afl/>
-
-<!-- TODO: discuss AFL-like path coverage and approximation (e.g., advantage of
-keeping track of paths without having to store paths -->
+* AFL++ <https://aflplus.plus/>
 
 ---
 
@@ -181,6 +183,19 @@ keeping track of paths without having to store paths -->
 # Fuzzer challenges: coverage wall
 
 ![](./figures/41-coveragewall.png){ width=280px }
+
+---
+
+# Fuzzer challenges: coverage wall
+
+
+Bypassing the coverage wall is hard, the following lists some approaches:
+
+* Better input (seeds) can mitigate the coverage wall
+* Fuzz individual components by writing fuzzer stubs (LibFuzzer)
+* Better mutation operators (help the fuzzer guide exploration)
+* Stateful fuzzing (teach fuzzer about different program states)
+* Grammar-aware fuzzing (teach fuzzer about input grammar)
 
 ---
 
@@ -211,7 +226,7 @@ dynamic analysis.
   type graphs or to enable optimizations)
 * The program is instrumented, often to record metadata at certain places and to
   enforce metadata checks at other places.
-* At runtime, the instrumentation constantly verified that the policy is not
+* At runtime, the instrumentation constantly verifies that the policy is not
   violated.
 
 What policies are interesting? What metadata do you need? Where would you check?
@@ -221,7 +236,7 @@ What policies are interesting? What metadata do you need? Where would you check?
 # AddressSanitizer (1/2)
 
 AddressSanitizer (ASan) detects memory errors. It places red zones around
-objects and checks those objects on trigger events. The tool can detect the
+objects and checks those objects on trigger events. ASan detects the
 following types of bugs:
 
 * Out-of-bounds accesses to heap, stack and globals
@@ -237,6 +252,11 @@ Typical slowdown introduced by AddressSanitizer is 2x.
 
 # AddressSanitizer (2/2)
 
+Goal: detect memory safety violations (both spatial and temporal)
+
+Key idea: allocate redzones (prohibited area around memory objects), check
+each memory access if it targets a redzone.
+
 * What kind of metadata would you record? Where?
 
 * What kind of operations would you instrument?
@@ -247,8 +267,14 @@ Typical slowdown introduced by AddressSanitizer is 2x.
 
 # ASan Metadata
 
-Idea: store the state of each word in shadow memory (i.e., is it accessible or
-not)
+Record live objects, guard them by placing redzones around them.
+
+ASan uses a table that maps each 8-byte word in memory to one byte in the
+table. Advantage: simple address calculation (`offset+address>>3`);
+disadvantage: memory overhead.
+
+ASan stores accessibility of each word as metadata (i.e., is a given address
+accessible or not).
 
 * An 8-byte aligned word of memory has only 9 states
 * First N-bytes are accessible, 8-N are not
@@ -453,4 +479,4 @@ Use sanitizers to test your code. More sanitizers are in development.
   probabilistic memory safety by recording metadata for every allocated object
   and checking every memory read/write.
 
-Don't forget to get your learning feedback through the Moodle quiz!
+Don't forget the Moodle quiz!
