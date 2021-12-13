@@ -21,10 +21,11 @@ subtitle: Security Summary
 
 # Two topics: testing and mitigations
 
-* Testing helps developers to find as many bugs as possible
+* Developers find as many bugs as possible by testing software
     * Fuzzing generates test cases
     * Sanitization detects policy violations
 * Mitigations detect policy violations at runtime, stop exploits
+* OS support both testing and mitigations, making them efficient
 
 ---
 

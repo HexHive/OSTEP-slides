@@ -9,7 +9,7 @@ subtitle: Mitigations
 * Stack canaries
 * Control-Flow Integrity (CFI)
 
-This slide deck covers [chapter 5.4 in SS3P](https://nebelwelt.net/SS3P/softsec.pdf).
+This slide deck covers [chapter 6.4 in SS3P](https://nebelwelt.net/SS3P/softsec.pdf).
 
 ---
 
@@ -88,8 +88,9 @@ This slide deck covers [chapter 5.4 in SS3P](https://nebelwelt.net/SS3P/softsec.
 * A code injection attack consists of two stages: 
     a) redirecting control flow
     b) to injected code
-* DEP prohibits the code injection, not control-flow hijacking
-    * Attackers can still redirect control flow to ***existing*** code
+* DEP prohibits execution of injected code
+    * DEP does not stop the redirection of control flow
+    * Attackers can still hijack control flow to ***existing*** code
 
 ---
 
@@ -330,6 +331,25 @@ control-flow graph. Precision of the analysis is crucial!
 
 ---
 
+# OS support for mitigation and sanitization
+
+* Fault or trap signal: a segmentation fault serves as a fast and efficient way
+  to interrupt and stop execution. Instead of adding `if (x)` to each
+  instruction, an illegal access quickly and efficiently stops program
+  execution.
+* Virtual address space: the OS controls this important abstraction and during
+  program instantiation the OS can introduce randomness and diversity to make
+  exploitation more costly (and requires the attacker to first recover
+  information).
+* Segments: the OS enables thread-local data by repurposing segment registers,
+  stack canaries are stored in thread-local data
+* Virtual address space: not all memory needs to be mapped to physical memory,
+  enabling shadow data structures as used for sanitization
+* Access to new architecture features such as Intel MPK (memory protection
+  keys), ARM PAC (pointer authentication codes), shadow stacks, ...
+
+---
+
 # Summary and conclusion
 
 * Deployed mitigations do not stop all attacks
@@ -342,4 +362,4 @@ control-flow graph. Precision of the analysis is crucial!
 * ***CFI*** restricts control-flow hijack attacks, does not protect against
   data-only attacks
 
-Don't forget to get your learning feedback through the Moodle quiz!
+Don't forget the Moodle quiz!
